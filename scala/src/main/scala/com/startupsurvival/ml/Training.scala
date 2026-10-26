@@ -18,30 +18,34 @@ object Training {
   final case class Trained(intercept: Double, coefficients: Array[Double], predictions: DataFrame, split: Split)
 
   /**
-   * Splits, then adds a `weight` column to the training half only.
+   * Adds a `weight` column of balanced class weights, total / (2 * classCount).
    *
    * Phase 18's first run showed unweighted models predicting "operating" for
    * almost everything (label 0 recall 0.0018) - with a ~13/87 class split that
-   * already scores ~87% accuracy. Balanced weights, total / (2 * classCount),
-   * make both classes contribute equally to the loss. They come from the
-   * training split alone so test labels never influence training.
+   * already scores ~87% accuracy. Balanced weights make both classes contribute
+   * equally to the loss. Callers pass training rows only, so held-out labels
+   * never influence training. Returns the row count too.
    */
-  def split(featureDF: DataFrame): Split = {
-    val Array(train, test) = featureDF.randomSplit(Array(TrainFraction, 1 - TrainFraction), seed = RandomSeed)
+  def withBalancedWeights(train: DataFrame): (DataFrame, Long) = {
     val counts = train.groupBy("label").count().collect().map(r => r.getDouble(0) -> r.getLong(1)).toMap
     val positiveCount = counts.getOrElse(1.0, 0L)
     val negativeCount = counts.getOrElse(0.0, 0L)
     require(positiveCount > 0 && negativeCount > 0,
-      s"one class is empty in the training split (label=1: $positiveCount, label=0: $negativeCount)")
+      s"one class is empty in the training data (label=1: $positiveCount, label=0: $negativeCount)")
 
     val total = positiveCount + negativeCount
     val weightForPositive = total.toDouble / (2.0 * positiveCount)
     val weightForNegative = total.toDouble / (2.0 * negativeCount)
     println(f"  Class weights: label=1 (n=$positiveCount) -> $weightForPositive%.4f, label=0 (n=$negativeCount) -> $weightForNegative%.4f")
 
-    val weighted = train.withColumn("weight",
-      when(col("label") === 1.0, lit(weightForPositive)).otherwise(lit(weightForNegative)))
-    Split(weighted.persist(), test.persist(), total, test.count())
+    (train.withColumn("weight", when(col("label") === 1.0, lit(weightForPositive)).otherwise(lit(weightForNegative))), total)
+  }
+
+  /** Splits, then weights the training half only. */
+  def split(featureDF: DataFrame): Split = {
+    val Array(train, test) = featureDF.randomSplit(Array(TrainFraction, 1 - TrainFraction), seed = RandomSeed)
+    val (weighted, trainCount) = withBalancedWeights(train)
+    Split(weighted.persist(), test.persist(), trainCount, test.count())
   }
 
   /** Fits on the training half and predicts the held-out half only. */

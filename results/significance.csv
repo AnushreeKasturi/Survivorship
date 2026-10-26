@@ -1,0 +1,9 @@
+population,model,feature_set_a,feature_set_b,delta_auc,ci_low,ci_high,p_value
+full,Logistic Regression,Financial (original),Financial (leak-free),-0.044431091951289914,-0.05442582080714464,-0.03439713549687107,0.0
+full,Linear SVM,Financial (original),Financial (leak-free),-0.027930045205210696,-0.038695759758501036,-0.017178578146816337,0.0
+cohort,Logistic Regression,Leak-free,Leak-free + Coverage,0.0012525894878836485,-0.009969861362266408,0.011573542736333486,0.796
+cohort,Linear SVM,Leak-free,Leak-free + Coverage,0.003107385460326628,-0.00806804108690895,0.01385080036242825,0.565
+cohort,Logistic Regression,Leak-free + Coverage,Leak-free + Sentiment,0.01003276003275999,1.1443990700255036E-4,0.020770010131712313,0.047
+cohort,Linear SVM,Leak-free + Coverage,Leak-free + Sentiment,0.006497807968396274,-0.002848642528486378,0.015652477656524777,0.157
+cohort,Logistic Regression,Leak-free,Leak-free + Sentiment,0.01128534952064364,-0.002988563922731169,0.026049893292499182,0.129
+cohort,Linear SVM,Leak-free,Leak-free + Sentiment,0.009605193428722902,-0.0044659000506256374,0.023492923818127065,0.187

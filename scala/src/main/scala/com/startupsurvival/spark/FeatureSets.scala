@@ -61,13 +61,66 @@ object FeatureSets {
     flag(s.newsCount > 0)
   )
 
+  // PHASE 14b/15b - leakage-free features and the coverage/tone ablation.
+
+  /** Top categories/countries for one-hot encoding. Built from frequencies
+   * only (never labels), so fixing it on the full population leaks nothing. */
+  final case class Vocab(categories: Array[String], countries: Array[String])
+
+  private def categories(f: FinancialFeatures): List[String] =
+    f.categoryList.toList.flatMap(_.split('|')).map(_.trim).filter(_.nonEmpty)
+
+  def buildVocab(combinedRDD: RDD[(String, CombinedFeatures)], topCategories: Int = 20, topCountries: Int = 10): Vocab = {
+    def top(values: RDD[String], k: Int): Array[String] =
+      values.map(v => (v, 1)).reduceByKey(_ + _).sortBy(-_._2).keys.take(k)
+    Vocab(
+      top(combinedRDD.flatMap(cf => categories(cf._2.financial)), topCategories),
+      top(combinedRDD.flatMap(_._2.financial.countryCode), topCountries)
+    )
+  }
+
+  def safeFeatureNames(v: Vocab): Array[String] =
+    Array("startupAgeYears", "yearsSinceFirstFunding", "yearsFoundedToFirstFunding") ++
+      v.categories.map("category=" + _) ++ Array("category=other") ++
+      v.countries.map("country=" + _) ++ Array("country=other")
+
+  val CoverageFeatureNames: Array[String] = Array("log1pNewsCount", "hasAnyCoverage")
+
+  /** SentimentFeatureNames minus the two coverage fields. */
+  val ToneFeatureNames: Array[String] = SentimentFeatureNames.slice(1, 11)
+
+  /**
+   * Phase 14b - only fields known at the cutoff for every startup (see the
+   * Phase 11b note in FinancialFeatureExtractor): no lifetime funding totals,
+   * round counts or last-funding date, nor any flag derived from them.
+   * Categories are multi-hot, since a startup can list several.
+   */
+  def financialSafeArray(v: Vocab)(f: FinancialFeatures): Array[Double] = {
+    val cats = categories(f).toSet
+    val country = f.countryCode.getOrElse("")
+    Array(f.startupAgeYears, f.yearsSinceFirstFunding, f.yearsFoundedToFirstFunding) ++
+      v.categories.map(c => flag(cats.contains(c))) ++ Array(flag(cats.exists(c => !v.categories.contains(c)))) ++
+      v.countries.map(c => flag(c == country)) ++ Array(flag(!v.countries.contains(country)))
+  }
+
+  /** How much news exists, not what it says. log1p tames the heavy tail (RSS returns up to 100). */
+  def coverageArray(s: SentimentFeatures): Array[Double] =
+    Array(math.log1p(s.newsCount.toDouble), flag(s.newsCount > 0))
+
+  def toneArray(s: SentimentFeatures): Array[Double] = sentimentArray(s).slice(1, 11)
+
+  /** Phase 18b's nested sets: each adds one group, isolating news volume, then tone. */
+  def safe(v: Vocab)(cf: CombinedFeatures): Array[Double] = financialSafeArray(v)(cf.financial)
+  def safeCoverage(v: Vocab)(cf: CombinedFeatures): Array[Double] = safe(v)(cf) ++ coverageArray(cf.sentiment)
+  def safeSentiment(v: Vocab)(cf: CombinedFeatures): Array[Double] = safeCoverage(v)(cf) ++ toneArray(cf.sentiment)
+
   private val Schema = StructType(Seq(
     StructField("permalink", StringType, nullable = false),
     StructField("label", DoubleType, nullable = false),
     StructField("features", SQLDataTypes.VectorType, nullable = false)
   ))
 
-  private def toDataFrame(
+  def toDataFrame(
       spark: SparkSession,
       combinedRDD: RDD[(String, CombinedFeatures)],
       featuresOf: CombinedFeatures => Array[Double]
