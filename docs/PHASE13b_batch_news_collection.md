@@ -103,4 +103,36 @@ hive -f ../hive/news_analysis.sql
 
 ## Collection record
 
-*(filled in from the frozen run — see below)*
+Frozen 2026-10-26 17:10 UTC after ~4 hours of collection in balanced order.
+
+| Quantity | Value |
+|---|---|
+| Startups queried successfully | 815 (408 closed, 407 operating) |
+| Failed (retried, not counted) | 2 transient failures (HTTP 503), both later retried successfully |
+| Rate-limit cool-downs during the run | 10+ (HTTP 503, plus one read time-out) |
+| Startups with ≥ 1 raw pre-cutoff item | 222 (27.2%); 14 hit Google's 100-item cap |
+| Unique raw headlines | 3,122 (2011: 1,236; 2012: 1,893; none on/after 2013-01-01) |
+| Accepted (confidence ≥ 0.6) | 378 (12.1%): 309 at 1.0, 18 partial, 51 generic phrase |
+| Startups with ≥ 1 accepted headline | 69 (8.5%): 25 closed, 44 operating |
+| Sentiment classes | 32 positive, 16 negative, 330 neutral |
+| Matching precision (audit of 100) | 29% about the company, 38% platform/product mention, 33% other entity |
+
+Run 1 (random order, rate-limited after 175 startups) is archived in
+`data/news_run1_random_ratelimited/` and was used only to test the pipeline.
+
+## Hive verification (`hive -f hive/news_analysis.sql`, 2026-10-27)
+
+| Query | Result |
+|---|---|
+| Collection outcome | 815 `ok`, 2 `failed` rows (both startups later `ok`) |
+| Raw coverage by label | closed: 408 queried, 96 with ≥ 1 raw item, 4.12 items on average; operating: 407, 126, 3.56 |
+| Items dated on/after 2013-01-01 | **0** (leakage check passes) |
+| Items per year | 2011: 1,236; 2012: 1,893 |
+| Top sources | Bleacher Report 100, JD Power 89, The Guardian 84, YCharts 82, RiverheadLOCAL 59 |
+
+The top sources are themselves a sign of matching noise: sports and
+local-news outlets dominate the raw results, and most of their items are
+rejected by NameMatcher.
+
+Hive runs its queries as MapReduce jobs, so YARN must be running
+(`start-yarn.sh`, or `yarn --daemon start resourcemanager|nodemanager`).

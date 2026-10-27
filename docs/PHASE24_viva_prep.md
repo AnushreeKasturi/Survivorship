@@ -1,241 +1,241 @@
 # Phase 24 — Viva Preparation
 
-These are likely questions with short answers you can defend, all tied to
-real numbers or code. Every member should be able to answer sections A, B
-and F. Sections C, D and E map to the owners of those parts of the project.
+These are likely questions with short answers you can defend. Each answer
+points to a real number or a real file. Everyone should know sections A,
+B and G. Sections C–F map to the owners of those parts of the project.
 
 ---
 
 ## A. The big picture (everyone)
 
 **Q: What is your research question, in one sentence?**
-Does adding news-headline sentiment improve startup-survival prediction over
-funding data alone?
+Does adding news-headline sentiment improve startup-survival prediction
+over structured data alone?
 
 **Q: What did you find?**
-1. Financial features give an AUC of about 0.71 (LR) and 0.73 (SVM).
-2. Adding sentiment changed nothing measurable: 2 of 8,686 test predictions
-   changed.
-3. That is *inconclusive*, not "no", because only 3 of 22,075 startups had
-   matched news.
+1. News **volume** adds nothing (ΔAUC ≈ 0, p = 0.80).
+2. News **tone** adds about +0.01 AUC with both models. It is borderline:
+   p = 0.047 for LR, and not significant after correcting for 8
+   comparisons.
+3. Along the way we found and removed a leak that inflated AUC by 0.044.
+   The leak-free model gets AUC 0.679 on all 22,075 startups.
 
-**Q: So your project failed?**
-No:
-- The pipeline is complete and verified end to end on real data.
-- The experimental design is sound.
-- We report the coverage limitation honestly instead of overclaiming.
-- We also found and documented a leakage path ourselves.
+**Q: So sentiment doesn't work?**
+At this coverage and matching precision, it carries at most a small
+signal. Only 8.5% of startups had matched news, and only 29% of matched
+headlines were about the company, so a large effect was never possible.
+The effect we see is in the right direction for both models. "Small and
+not yet conclusive" is the honest answer.
 
-The missing step (batch news collection) is clearly identified, and the
-same code runs unchanged once that data exists.
+**Q: Why is that still a good project?**
+- The pipeline is complete, tested and verified.
+- We collected real data at scale despite rate limits.
+- We used cross-validation and confidence intervals instead of a single
+  number.
+- We measured our own weaknesses: the leakage and the matching precision.
+- We designed the experiment so that "no" or "inconclusive" were valid
+  answers.
 
-**Q: Why only 3 startups with news?**
-Phase 7 was a live feasibility test on a handful of companies, to prove that
-Google News RSS can return correctly dated pre-2013 articles. The batch
-collection across thousands of startups (with rate limiting and
-checkpointing) was not run before the deadline.
-
-**Q: Why did you choose a 2×2 design?**
-It isolates two effects separately:
-- **Feature effect** (E3−E1 and E4−E2): does sentiment help, with the model
-  held fixed?
-- **Model effect** (E2−E1 and E4−E3): does the classifier matter, with the
-  features held fixed?
+**Q: Why a 2×2 design, plus the extra feature sets?**
+The 2×2 separates the feature effect from the model effect. Then the
+nested Leak-free ⊂ +Coverage ⊂ +Sentiment sets separate *how much* news
+there is from *what it says*. Coverage tracks funding (famous companies get
+news), so without this split a gain could just mean "famous startups
+survive".
 
 ## B. Data and leakage (everyone; M1 in depth)
 
 **Q: What is the single biggest risk in this project?**
-Temporal leakage. The labels date from about 2014. News collected today
-includes articles like "X shut down", which would give away the label.
+Temporal leakage. The labels date from about 2014, and news collected today
+contains articles like "X shut down".
 
-**Q: How did you prevent it?**
-We used one cutoff, T = 2013-01-01, enforced at every stage:
+**Q: How do you prevent it?**
+We use one cutoff, T = 2013-01-01, enforced everywhere:
 - Eligibility: founded before T and first funded before T.
-- `last_funding_at` is nulled if it is on or after T.
-- Funding totals are used only when all rounds are provably before T.
-- News is filtered to before T at collection *and* again at aggregation.
+- News is filtered to before T at collection and again at aggregation.
+  Hive confirms 0 items on or after 2013-01-01.
+- The final feature set uses only fields known at T for every startup.
 
-**Q: Is there any leakage left?** *(Expect this; say it before they do)*
-Yes, and we found it ourselves:
-- `fundingDataLeakageSafe` = 0 means the last funding round was after T.
-  That reveals the startup was still raising money after the prediction
-  date.
-- It has the largest LR coefficient (−1.26).
-- So the absolute AUC is probably optimistic. The sentiment comparison is
-  still fair, because both feature sets contain the flag.
-- Fix: drop the flag and rebuild the recency features from round-level
-  dates.
+**Q: Tell me about the leak you found.**
+- `fundingDataLeakageSafe` = 0 meant "the latest round was on or after T",
+  i.e. the company was still raising money after the prediction date.
+- It had the biggest coefficient (−1.26).
+- Removing it (and the feature imputed alongside it) lowered AUC by 0.044
+  for LR (95% CI [−0.054, −0.034]) and 0.028 for SVM, both p < 0.001.
+- The lesson: a missing-value flag is a feature. If the *reason* a value
+  is missing involves the future, the flag leaks.
 
-**Q: Why exclude acquired startups?**
-An acquisition can be a success (a strategic exit) or a disguised failure (an
-acqui-hire), and the dataset cannot tell the two apart.
+**Q: What is in the leak-free feature set?**
+Age at T, years since first funding, years from founding to first funding,
+20 category flags and 10 country flags. There are no lifetime funding
+totals, round counts or last-funding dates.
 
-**Q: Why exclude IPO startups?**
-They are about 2% of rows, and they are a structurally different
-population of easy cases.
+**Q: Couldn't category or country leak too?**
+In principle, if Crunchbase edited them after 2013. They describe what a
+company *is*, not how it fared, so the risk is much weaker. We list it as
+a limitation.
 
-**Q: Why 2013-01-01 and not later?**
-A later cutoff gives more rows, but less time for closures to be recorded
-before the snapshot (right-censoring). That would make "operating" partly
-mean "not dead *yet*".
+**Q: Why exclude acquired and IPO startups?**
+An acquisition can be a success or a disguised failure (an acqui-hire),
+and the data can't tell which. IPOs are about 2% of rows and are easy
+cases.
 
-**Q: How big is the dataset after cleaning?**
-66,368 raw rows → 59,272 with a valid status → **22,075 eligible**.
-Of those, 2,902 are closed and 19,173 are operating (1 : 6.61).
+**Q: Numbers?**
+66,368 raw rows → 59,272 with a valid status → 22,075 eligible (2,902
+closed, 13.15%).
 
-**Q: Why `permalink` and not `name` as the key?**
-`permalink` has 0 duplicates. `name` has 330 case-insensitive duplicates.
+## C. News collection (M2 in depth)
 
-**Q: What did you do about corrupted dates?**
-Dates outside 1950–2016 (for example, the year 1015) are treated as missing,
-not trusted: 239 `founded_at`, 3 `first_funding_at` and 2 `last_funding_at`
-values.
+**Q: Where does the news come from?**
+Google News RSS, queried as `"<name>" before:2013-01-01 after:2011-01-01`.
+Free APIs (NewsAPI, GNews) can't reach before 2013.
 
-## C. Scala and sentiment (M2 in depth)
+**Q: Why only 815 startups?**
+Google rate-limits: it blocked us after 175 requests on the first run, and
+the sustainable rate was about 125–480 startups per hour. So we:
+- made the collector resumable (it saves progress after every startup);
+- log failed requests as "failed", never as "no news";
+- visit startups in a **balanced random order**.
 
-**Q: How does your sentiment scorer work?**
-1. Lowercase the headline.
-2. Tokenise on non-letters.
-3. Remove stopwords.
-4. Count positive and negative lexicon hits with `foldLeft`.
-5. Score = positive − negative, then classify as >0, <0 or 0.
+**Q: Why balanced (half closed, half operating)?**
+Any stopping point gives a random 1:1 sample. AUC doesn't depend on class
+balance, so this gives far more statistical power per request than a
+random sample, which would be only 13% closed. The comparisons are always
+made on the same startups, so the design is fair to every feature set.
 
-Example: "raises major funding and expands" → [raises, funding, expands]
-→ +3, Positive.
+**Q: How good is the name matching?**
+We audited 100 random accepted headlines:
+- 29% are about the company;
+- 38% mention its product or platform (e.g. "Craigslist killer jailed");
+- 33% are a different entity ("Workspace", "Mowgli", "curated by").
 
-**Q: Why not VADER or a pretrained model?**
-- Transparency: every score is explained by named matched terms.
-- The syllabus requires showing immutable collections, `foldLeft` and
-  pattern matching.
-- Loughran and McDonald (2011) showed that general lexicons misread
-  business text, so we built a startup-news-specific one.
+**Q: What did you fix in the matcher?**
+Each fix came from a real error in the collected data:
+- Ordinary-word names ("Quorum") are now ambiguous, using a 63,875-word
+  dictionary.
+- Partial matches need a distinctive word ("Wireless Tech" no longer
+  matches every "wireless" headline).
+- Outlet suffixes are stripped: every "… - Seeking Alpha" headline had
+  matched the startup *Seeking Alpha*.
 
-**Q: What are its weaknesses?**
-- No negation: "$41 million can't buy success" scores Neutral.
-- No stemming: "acquire" is missing from the lexicon.
-- No phrase or sarcasm handling.
+**Q: How does the sentiment scorer work?**
+Lowercase → tokenise → remove stopwords → count lexicon hits with
+`foldLeft` → score = positive − negative. Example: "raises major funding
+and expands" scores +3. Its weaknesses: 87% of headlines score neutral,
+and there is no negation or stemming.
 
-**Q: How do you match a headline to the right company?**
-`NameMatcher` normalises both strings, then scores:
-- Short single-word names of 4 characters or fewer: capped at 0.3
-  (ambiguous).
-- Exact whole-word phrase match: 1.0.
-- Partial multi-word overlap: 0.5–0.8.
-- Otherwise: rejected.
-
-It rejected "The tomato barons of the occupied Western Sahara" as a
-"Kabbage" result.
-
-**Q: Where are the Unit 2 concepts in your code?**
-- Immutable `Set`/`List` lexicons.
-- `foldLeft` in `countSentimentWords`.
-- Pattern matching in `classify` and the fold body.
-- Case classes (`StartupRecord`, `SentimentFeatures`).
-- `Option` for genuinely missing values.
-- `partition` in `DataCleaner`.
-
-## D. Spark (M3 in depth)
+## D. Spark and Hadoop (M1/M3 in depth)
 
 **Q: Which RDD operations did you use, and why?**
-- `textFile` (from HDFS) and `parallelize` to create RDDs.
-- `map`, `filter`, `flatMap` and `mapValues` as lazy transformations.
-- `reduceByKey` for distributed label counts. It is a shuffle and a stage
-  boundary.
-- `groupByKey` to collect each startup's articles.
-- `leftOuterJoin` to join financial and news data.
-- `persist` on the joined RDD, because it feeds both feature sets.
-
-**Q: Why `leftOuterJoin` rather than `join`?**
-An inner join keeps only startups that have news. That would be 3 rows, and
-it would bias the data toward well-funded companies. A left outer join
-keeps all 22,075 startups and gives the rest a zero-baseline sentiment
-record.
-
-**Q: What are lazy evaluation and lineage?**
-- Transformations only build a DAG. Nothing runs until an action (`count`,
-  `collect`, saving output).
-- Lineage is that DAG. If a partition is lost, Spark recomputes it from the
-  lineage instead of replicating the data. That is RDD fault tolerance.
-
-**Q: Why persist?**
-`combinedRDD` is reused by both feature sets. Without `persist`, Spark would
-recompute the whole lineage (HDFS read → parse → features → join) twice.
+- `textFile` from HDFS for the startups and the collected headlines;
+  `parallelize` for the verified demo sample.
+- `map`, `filter`, `flatMap` and `mapValues` for parsing, matching and
+  scoring.
+- `reduceByKey` for label counts and headline de-duplication.
+- `groupByKey` where the full per-startup list is needed (trend and
+  volatility).
+- `leftOuterJoin`, so all 22,075 startups are kept.
+- `persist` on RDDs that are reused.
 
 **Q: `reduceByKey` vs `groupByKey`?**
-- `reduceByKey` combines values on each partition *before* the shuffle, so
-  less data moves.
-- `groupByKey` ships every value. We use it only where we genuinely need
-  the full list of articles per startup (to compute the trend and
-  volatility).
+`reduceByKey` combines on each partition before the shuffle, so less data
+moves. We use `groupByKey` only where we genuinely need every record.
 
-**Q: Is this really distributed?**
-The programming model is distributed. Execution is single-node: HDFS runs
-pseudo-distributed and Spark runs `local[*]` on WSL2. The same code runs on
-a cluster by changing the master URL.
+**Q: Lazy evaluation and lineage?**
+Transformations only build a DAG, and actions trigger it. If a partition is
+lost, Spark recomputes it from the lineage. That is RDD fault tolerance.
+
+**Q: Explain your HDFS setup.**
+Single node, block size 128 MB, replication 1 (one DataNode). The
+eligible file is 3.8 MB, so it is one block (`fsck` shows
+`blk_1073741826`, HEALTHY). See `hadoop/hdfs_commands.md`.
+
+**Q: Where is Hive used?**
+`hive/schema.sql` defines the startup table. `hive/news_analysis.sql`
+defines external tables over the same HDFS news files Spark reads, and
+runs coverage-by-label, the leakage check and per-year counts.
 
 ## E. ML and evaluation (M3/M4 in depth)
 
-**Q: Your accuracy is 41–52%. That's worse than a coin flip?**
-- Accuracy is the wrong metric here. A model that always says "operating"
-  gets 87.2%, and it is useless.
-- Without class weights, both of our models did exactly that (SVM TN = 0).
-- We use balanced weights, w_c = N / (2·N_c), computed on the training
-  split only (0.576 for operating, 3.779 for closed). That trades accuracy
-  for catching closures: closure recall is 0.85 (LR) and 0.92 (SVM).
-- Coin flip is 50% only for balanced classes. The right comparison is
-  AUC 0.71 vs 0.5, or balanced accuracy 0.66 vs 0.5.
+**Q: Why AUC as the main metric?**
+It ignores both class balance and threshold. That makes it fair across
+the full population (13% closed) and the balanced cohort (50%).
 
-**Q: Why compute class weights on the training split only?**
-Using test-set label frequencies would leak test information into training.
+**Q: How did you evaluate?**
+- Stratified 5-fold cross-validation, with the same folds for every
+  experiment.
+- In each fold, 80% of the training data fits the model and 20% picks the
+  threshold, so the test fold is never touched.
+- Balanced class weights, computed on training data only.
+- Paired bootstrap (2,000 resamples of startups) for every "does X help"
+  comparison.
 
-**Q: The SVM has a higher AUC but lower accuracy. Explain.**
-- AUC measures ranking over all thresholds. Accuracy measures one threshold
-  (margin 0).
-- The SVM ranks slightly better, but its default threshold flags 66% of
-  operating startups as closed.
-- Threshold tuning on a validation set would fix this. We did not tune on
-  the test set, because that would be leakage.
+**Q: Why tune the threshold for balanced accuracy and not F1?**
+We started with closed-class F1 and noticed that, on a 50/50 cohort,
+predicting everyone closed already scores F1 = 0.667, so the tuning drifted
+to useless thresholds. Balanced accuracy doesn't depend on class balance.
+AUC is unaffected by the threshold either way.
 
-**Q: Which model is better?**
-- At the default threshold, LR: F1 on both classes and balanced accuracy
-  (0.66 vs 0.63).
-- On ranking, the SVM: AUC 0.726 vs 0.708.
-- LR also gives probabilities, which is why the dashboard uses it.
+**Q: How do you know your metrics are correct?**
+Our AUC equals Spark's `BinaryClassificationMetrics` to 6 decimals
+(0.723336), and 31 unit tests check it against hand-computed values,
+including ties and weighted resamples.
 
-**Q: Hyperparameters?**
-Both models use 100 iterations, L2 regularisation with λ = 0.01,
-standardisation on, an 80/20 `randomSplit` with seed 42, and the same split
-for all four experiments.
+**Q: Is p = 0.047 significant?**
+Nominally yes, but we ran 8 cohort comparisons; Bonferroni needs
+p < 0.006. We report it as borderline. The consistent direction across
+both models is the stronger part of the evidence.
 
-**Q: Are the differences statistically significant?**
-We used a single split with no confidence intervals. Differences in the
-third or fourth decimal place (such as ΔAUC 0.0005) should be treated as
-noise. k-fold cross-validation is future work.
+**Q: Why does `negativeNewsCount` have a positive coefficient?**
+Matching noise. Craigslist is operating, but its matched headlines are
+crime stories ("Craigslist killer"), which score negative. It is a good
+example of why precision limits the sentiment signal.
 
-**Q: Why are the sentiment coefficients so large (positiveRatio +2.74)?**
-They are fitted to at most 3 non-zero rows, so they are meaningless. With
-almost no data, the regulariser barely constrains them.
+**Q: LR or SVM?**
+They are almost identical on leak-free features (0.679 vs 0.679 on the
+full population; 0.650 vs 0.634 on the cohort). LR also gives
+probabilities, so the dashboard uses it.
 
-## F. "What would you do with more time?" (everyone)
+## F. Testing and reproducibility (everyone)
 
-1. Batch-collect news for thousands of startups, then re-run.
-2. Remove the leaky flag and use round-level funding dates.
-3. Tune thresholds on a validation split, and use k-fold cross-validation.
-4. Run a coverage-only vs coverage-plus-tone ablation, to separate news
-   volume (a funding proxy) from news tone.
-5. Add negation and stemming to the scorer.
+**Q: How did you test the code?**
+- 31 ScalaTest unit tests: matching, scoring, features, leakage guard,
+  sampling order, metrics, folds and bootstrap.
+- A Phase 10 regression fixture.
+- The Phase 21 end-to-end checklist.
+- The original Phase 18 baseline re-runs bit-for-bit.
+
+**Q: Can someone reproduce this?**
+Yes; the steps are in the README:
+1. Collection is resumable with a fixed seed.
+2. Upload the data to HDFS.
+3. `sbt test`, then `ExperimentRunner`.
+4. Run the plotting scripts.
+
+## G. "What would you do with more time?" (everyone)
+
+1. Collect more news (the collector resumes where it stopped).
+2. Improve matching for generic names, using context such as the company
+   domain or founder name.
+3. Use a better sentiment model (negation, or a domain-tuned model) on the
+   same folds.
+4. Use round-level funding data to restore pre-cutoff funding amounts
+   safely.
+5. Run one pre-registered test of "tone beyond coverage" on a new, larger
+   cohort.
 
 ## Numbers to memorise
 
 | What | Value |
 |---|---|
-| Raw rows → eligible | 66,368 → 22,075 |
-| Closed / operating | 2,902 / 19,173 (13.15% closed) |
+| Raw → eligible | 66,368 → 22,075 (2,902 closed) |
 | Cutoff | 2013-01-01 |
-| Train / test | 17,732 / 4,343 (556 closed in test) |
-| Startups with news | 3 (Kabbage, Color Labs, Pinterest) |
-| AUC: E1 / E2 / E3 / E4 | 0.708 / 0.726 / 0.708 / 0.726 |
-| F1 (closed): LR / SVM | 0.314 / 0.286 |
-| Recall (closed): LR / SVM | 0.847 / 0.917 |
-| Always-"operating" accuracy | 87.2% |
-| Predictions changed by sentiment | 2 (LR), 0 (SVM) |
+| Leakage effect (LR) | ΔAUC −0.044, 95% CI [−0.054, −0.034] |
+| Leak-free AUC, full population | 0.679 (LR and SVM) |
+| News cohort | 815 (408 closed); 69 with matched news (8.5%) |
+| Coverage: closed vs operating | 6.1% vs 10.8% (p = 0.016) |
+| Matching precision (strict / lenient) | 29% / 67% |
+| Headlines neutral | 87% |
+| Volume effect | ΔAUC +0.001, p = 0.80 |
+| Tone beyond volume (LR / SVM) | +0.010 (p = 0.047) / +0.006 (p = 0.16) |
+| Unit tests | 31, all passing |

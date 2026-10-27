@@ -5,33 +5,35 @@
 ## Abstract
 
 We investigate whether sentiment extracted from public news headlines
-improves the prediction of startup survival beyond structured funding data.
+improves the prediction of startup survival beyond structured attributes.
 We built a distributed pipeline on a Crunchbase snapshot of 66,368 startups:
 
 - HDFS for storage and Hive for structured exploration.
 - Functional Scala for news matching and lexicon-based sentiment scoring.
-- Spark key/value RDDs for feature aggregation and joins.
+- Spark key/value RDDs for aggregation and joins.
 - Spark MLlib for Logistic Regression and linear SVM classifiers.
 
-A strict prediction cutoff (2013-01-01) and per-feature leakage guards
-restrict the models to information available at prediction time, leaving
-22,075 eligible startups (13.15% closed).
+A strict prediction cutoff (2013-01-01) leaves 22,075 eligible startups
+(13.15% closed). We collected pre-cutoff Google News headlines for a
+balanced random cohort of 815 startups with a resumable, rate-limit-aware
+Scala collector, and evaluated every model with stratified 5-fold
+cross-validation and paired bootstrap confidence intervals.
 
-We ran a 2×2 experiment (financial vs. financial + sentiment features ×
-Logistic Regression vs. SVM) with balanced class weights:
+The analysis produced three findings:
 
-- Financial features alone achieved an AUC of 0.708 (LR) and 0.726 (SVM).
-- Adding sentiment changed AUC by less than 0.0005 and altered only 2 of
-  8,686 test predictions.
+- **Leakage.** One financial indicator carried post-cutoff information;
+  removing it lowered AUC by 0.044 (95% CI [−0.054, −0.034]). Leak-free
+  structural features still reach AUC 0.679.
+- **News volume** did not improve prediction (ΔAUC ≈ 0, p = 0.80).
+- **News tone** added about +0.01 AUC with both models. This is borderline
+  (p = 0.047 for Logistic Regression) and not significant after
+  multiple-comparison correction.
 
-This null difference is uninformative rather than negative. Pre-cutoff news
-was matched for only 3 startups, so the sentiment features were constant for
-99.99% of the population. Our analysis also identified a residual leakage
-path in one financial indicator, which likely inflates absolute performance.
-
-The pipeline is verified end to end and reproducible. Answering the research
-question requires batch news collection at scale, which we identify as the
-primary direction for future work.
+A manual audit explains the weak signal: only 8.5% of cohort startups had
+matched news, and only 29% of matched headlines were about the company.
+We conclude that sentiment carries at most a small signal at this coverage
+and matching precision. The verified, reproducible pipeline (31 unit tests)
+can test the question at larger scale.
 
 **Keywords:** startup survival, sentiment analysis, Apache Spark, MLlib,
 HDFS, Hive, Scala, data leakage, class imbalance

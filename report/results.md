@@ -1,131 +1,181 @@
 # 4. Results
 
-Every number in this section comes from `results/experiment_results.csv`,
-produced by `Evaluation.scala` on the real 22,075-startup dataset, and
-reproduced by an independent re-run on 2026-10-26 (Phase 21; the metrics
-and confusion matrices matched exactly, with differences only in the 16th
-significant digit of floating-point values).
+Every number in this section comes from files written by the pipeline:
+`results/experiment_results.csv` (Phase 18), `results/cv_summary.csv`,
+`results/cv_folds.csv`, `results/significance.csv`,
+`results/cohort_lr_coefficients.csv` (Phase 18b), and
+`results/name_match_audit.csv`, plus the run logs.
 
 ## 4.1 Pipeline verification
 
-| Check (Phase 21) | Expected | Observed |
+| Check | Expected | Observed |
 |---|---|---|
 | Startups loaded from HDFS | 22,075 | 22,075 |
 | Label split (closed / operating) | 2,902 / 19,173 | 2,902 / 19,173 |
-| Financial feature records | 22,075 | 22,075 |
-| Startups with sentiment features | 3 | 3 |
 | Rows after `leftOuterJoin` | 22,075 | 22,075 |
-| Rows with real news coverage / zero baseline | 3 / 22,072 | 3 / 22,072 |
-| Feature vector width (A / B) | 8 / 20 | 8 / 20 |
-| Train / test rows (each experiment) | sum to 22,075 | 17,732 / 4,343 |
-| NaN coefficients | none | none |
+| Phase 18 baseline re-run | identical to committed CSV | identical (all metrics and confusion matrices) |
+| Phase 10 regression fixture (sentiment sums) | color-labs −2, kabbage 1, pinterest 2 | −2, 1, 2 |
+| Own AUC vs Spark `BinaryClassificationMetrics` | equal | 0.723336 = 0.723336 |
+| Unit tests (`sbt test`) | all pass | 31 / 31 |
+| News items dated on/after 2013-01-01 | 0 | 0 (all items 2011-01-01 to 2012-12-31) |
 
-**Training split:** 15,386 operating and 2,346 closed, giving balanced class
-weights of 0.5762 (operating) and 3.7792 (closed).
+## 4.2 News collection (Phase 13b)
 
-**Test split:** 4,343 startups, of which 3,787 are operating and 556 are
-closed (12.8%). A trivial model that always predicts "operating" would
-therefore score **87.2% accuracy**, while having zero recall on closures.
+| Quantity | Value |
+|---|---|
+| Startups queried successfully (cohort) | **815** (408 closed, 407 operating) |
+| Failed queries | 2 transient failures, both retried successfully |
+| Startups with ≥ 1 raw pre-cutoff item | 222 (27.2%): closed 96 (23.5%), operating 126 (31.0%) — from Hive |
+| Startups hitting Google's 100-item cap | 14 |
+| Unique raw headlines (after de-duplication) | 3,122 (2011: 1,236; 2012: 1,893) |
+| Accepted by NameMatcher (confidence ≥ 0.6) | 378 (12.1%) |
+| Startups with ≥ 1 accepted headline | **69 (8.5%)** |
+| Of which closed / operating | 25 of 408 (6.1%) / 44 of 407 (10.8%) |
+| Sentiment of accepted headlines | 32 positive, 16 negative, 330 neutral (87% neutral) |
 
-## 4.2 Headline metrics
+Name-match confidence of the raw headlines: 1,605 rejected (0.0), 1,139
+ambiguous (0.3), 51 generic phrases (0.6), 18 partial (0.65–0.7), 309
+distinctive exact matches (1.0).
 
-| Exp. | Model | Features | Accuracy | **AUC-ROC** | **F1 (closed)** | F1 (operating) | Balanced acc. |
-|---|---|---|---|---|---|---|---|
-| 1 | Logistic Regression | Financial | 0.5252 | 0.7081 | 0.3136 | 0.6371 | 0.6625 |
-| 2 | Linear SVM | Financial | 0.4131 | 0.7256 | 0.2858 | 0.5019 | 0.6282 |
-| 3 | Logistic Regression | Financial + Sentiment | 0.5252 | 0.7081 | 0.3131 | 0.6372 | 0.6618 |
-| 4 | Linear SVM | Financial + Sentiment | 0.4131 | 0.7261 | 0.2858 | 0.5019 | 0.6282 |
+**Coverage is associated with survival.** Operating startups were more
+likely than closed ones to have matched pre-cutoff news (10.8% vs 6.1%;
+two-proportion z = 2.40, p = 0.016).
 
-Balanced accuracy = mean of the two class recalls.
+## 4.3 Name-matching precision audit
 
-### Per-class precision and recall
+A seeded random sample of 100 accepted headlines (from 30 startups) was
+judged by hand:
 
-| Exp. | Precision (closed) | Recall (closed) | Precision (operating) | Recall (operating) |
-|---|---|---|---|---|
-| 1 | 0.1924 | 0.8471 | 0.9551 | 0.4780 |
-| 2 | 0.1693 | 0.9173 | 0.9654 | 0.3391 |
-| 3 | 0.1922 | 0.8453 | 0.9547 | 0.4782 |
-| 4 | 0.1693 | 0.9173 | 0.9654 | 0.3391 |
-
-### Confusion matrices (positive class = operating)
-
-| Exp. | TP | TN | FP | FN |
-|---|---|---|---|---|
-| 1 | 1,810 | 471 | 85 | 1,977 |
-| 2 | 1,284 | 510 | 46 | 2,503 |
-| 3 | 1,811 | 470 | 86 | 1,976 |
-| 4 | 1,284 | 510 | 46 | 2,503 |
-
-Charts: `visualization/accuracy_auc_comparison.png`,
-`f1_by_class_comparison.png`, `confusion_matrices.png`, `sentiment_lift.png`.
-
-## 4.3 Feature effect — the research question
-
-| Comparison | ΔAccuracy | ΔAUC | ΔF1 (closed) | Predictions changed |
-|---|---|---|---|---|
-| E3 − E1 (Logistic Regression) | 0.0000 | −0.00003 | −0.0005 | 2 of 4,343 |
-| E4 − E2 (Linear SVM) | 0.0000 | +0.00046 | 0.0000 | 0 of 4,343 |
-
-Adding the 12 sentiment features had **no measurable effect** with either
-model. For Logistic Regression, exactly two test predictions changed (one
-operating startup moved from FN to TP, and one closed startup moved from TN
-to FP), which cancel out in accuracy. For the SVM, every test prediction is
-identical, and AUC moves only in the fourth decimal place.
-
-**This is not evidence that sentiment has no predictive value.** Only 3 of
-22,075 startups (0.014%) have any matched pre-cutoff news. For the other
-22,072, every sentiment feature is a constant zero baseline, so the two
-feature sets are effectively identical. The experiment, as run, has no
-statistical power to answer the research question (see §5.1).
-
-## 4.4 Model effect
-
-| Comparison | ΔAccuracy | ΔAUC | ΔRecall (closed) | ΔF1 (closed) |
-|---|---|---|---|---|
-| E2 − E1 (SVM vs LR, financial) | −0.1121 | +0.0174 | +0.0701 | −0.0278 |
-| E4 − E3 (SVM vs LR, financial + sentiment) | −0.1121 | +0.0179 | +0.0719 | −0.0273 |
-
-The model effect is consistent across both feature sets:
-
-- The **SVM ranks slightly better** (AUC 0.726 vs 0.708), and catches more
-  closures (recall 0.917 vs 0.847).
-- But at its default decision threshold it labels far more operating
-  startups as closed (2,503 FN vs 1,977). That gives it lower accuracy, F1 on
-  both classes and balanced accuracy.
-- **Logistic Regression is the better-balanced classifier at the default
-  threshold.** The SVM's higher AUC suggests that it might match or overtake
-  LR with a tuned threshold, which was not done here.
-
-## 4.5 Learned coefficients (Logistic Regression, Experiment 1)
-
-From `results/model_coefficients.json`. Spark reports coefficients on the
-original feature scale, so magnitudes are only comparable for features with
-similar units. The 0/1 indicator features are directly comparable with each
-other.
-
-| Feature | Coefficient | Reading (positive = more likely operating) |
+| Judgement | Count | Example |
 |---|---|---|
-| `fundingDataLeakageSafe` | −1.2607 | Startups whose last recorded round was *before* the cutoff are less likely to be operating (see §5.2: this flag carries post-cutoff information) |
-| `hasFundingAmountRecorded` | −0.2522 | |
-| `fundingRoundCount` | −0.1290 per round | |
-| `startupAgeYears` | +0.0384 per year | Older startups (as of 2013) are slightly more likely to still be operating |
-| `fundingFrequencyPerYear` | +0.0096 | |
-| `timeSinceLastFundingDays` | −0.00045 per day | Longer since the last round → more likely closed (≈ −0.17 per year) |
-| `totalFundingUsd`, `averageRoundSizeUsd` | ≈ ±1e−9 per USD | Negligible per dollar |
-| Intercept | +1.5750 | |
+| About the company (y) | **29** | "Kabam announces acquisition of Wild Shadow Studios" |
+| Mentions the company's product or platform, not company news (p) | 38 | "Teen convicted in fake Craigslist ad killings in Ohio" |
+| Different entity or meaning (n) | 33 | "Workspace: St. Johns River Ferry Capt. Wayne Fenner" (startup *Workspace*) |
 
-In Experiment 3, the sentiment coefficients are large (for example,
-`positiveRatio` +2.74 and `averageSentiment` +1.85), but they are fitted to
-at most three non-zero training rows and should not be interpreted.
+Strict precision is therefore **29%**, and lenient precision (y + p) is
+67%. The audit is weighted by headline, so prolific names dominate it:
+Craigslist alone contributes 29 of the 100 sampled headlines, all of them
+"p", most of them crime reports. Among confidence-1.0 matches the split is
+22 / 38 / 23. Generic dictionary names that are not in the SCOWL list as
+single words ("Workspace", "curated.by", "Mowgli") are the main source of
+"n".
 
-## 4.6 Summary
+## 4.4 Leakage check — full population (22,075 startups, 5-fold CV)
 
-1. **Feature effect (research question): inconclusive.** Sentiment features
-   changed 2 of 8,686 test predictions across the two models, because only
-   3 startups had news coverage.
-2. **Model effect: real and consistent.** At the default threshold, LR gives
-   better-balanced predictions, while the SVM gives slightly better ranking
-   (AUC) and higher closure recall.
-3. **Financial features alone carry moderate signal** (AUC ≈ 0.71–0.73),
-   well above chance (0.5), although part of that signal comes from the
-   leakage issue described in §5.2.
+| Feature set | Model | AUC (mean ± sd) | PR-AUC closed | 
+|---|---|---|---|
+| Financial (original) | Logistic Regression | 0.724 ± 0.011 | 0.249 |
+| Financial (original) | Linear SVM | 0.727 ± 0.010 | 0.255 |
+| Financial (leak-free) | Logistic Regression | **0.679 ± 0.005** | 0.238 |
+| Financial (leak-free) | Linear SVM | **0.679 ± 0.006** | 0.232 |
+
+PR-AUC chance level = closed prevalence = 0.131.
+
+| Comparison (paired bootstrap, 2,000 resamples) | ΔAUC | 95% CI | p |
+|---|---|---|---|
+| Original → leak-free, LR | **−0.044** | [−0.054, −0.034] | < 0.001 |
+| Original → leak-free, SVM | **−0.028** | [−0.039, −0.017] | < 0.001 |
+
+About 0.03–0.04 of the original AUC came from post-cutoff information.
+Without it, the models still clearly beat chance (AUC 0.68), using only
+age, funding timing, category and country.
+
+## 4.5 Research question — news cohort (815 startups, 5-fold CV)
+
+| Feature set | LR AUC (mean ± sd) | SVM AUC (mean ± sd) | LR PR-AUC closed |
+|---|---|---|---|
+| Leak-free | 0.639 ± 0.031 | 0.625 ± 0.033 | 0.659 |
+| Leak-free + Coverage | 0.639 ± 0.025 | 0.625 ± 0.030 | 0.664 |
+| Leak-free + Sentiment | **0.650 ± 0.021** | **0.634 ± 0.024** | 0.670 |
+
+PR-AUC chance level in the balanced cohort = 0.50.
+
+| Comparison | Model | ΔAUC | 95% CI | p |
+|---|---|---|---|---|
+| + Coverage (news volume) | LR | +0.001 | [−0.010, +0.012] | 0.80 |
+| + Coverage (news volume) | SVM | +0.003 | [−0.008, +0.014] | 0.57 |
+| + Tone, beyond coverage | LR | **+0.010** | **[+0.0001, +0.021]** | **0.047** |
+| + Tone, beyond coverage | SVM | +0.006 | [−0.003, +0.016] | 0.16 |
+| + All sentiment features | LR | +0.011 | [−0.003, +0.026] | 0.13 |
+| + All sentiment features | SVM | +0.010 | [−0.004, +0.023] | 0.19 |
+
+- **News volume adds nothing measurable.** Coverage differs by class
+  (§4.2), but it is present for only 8.5% of startups, which caps how much
+  it can move a ranking.
+- **News tone gives a small, consistently positive improvement**, about
+  +0.01 AUC for both models. It reaches nominal significance only for LR's
+  tone-beyond-coverage comparison (p = 0.047, CI just above zero). With 8
+  cohort comparisons, that result does not survive a Bonferroni correction
+  (α = 0.05/8 ≈ 0.006).
+- The cohort's leak-free AUC (0.64) is lower than the full population's
+  (0.68) because the models train on ~650 rather than ~17,700 startups per
+  fold, and because the categories most predictive in the full population
+  are thinly represented in a sample of 815.
+
+## 4.6 Threshold-based metrics
+
+Thresholds were tuned for balanced accuracy on each fold's inner
+validation split, then applied unchanged to the test fold. Values are
+means over 5 folds; "closed" is treated as the positive class.
+
+| Population | Feature set | Model | Balanced acc. | Recall (closed) | Precision (closed) | F1 (closed) |
+|---|---|---|---|---|---|---|
+| Full | Financial (original) | LR | 0.675 ± 0.013 | 0.759 | 0.220 | 0.341 |
+| Full | Financial (original) | SVM | 0.672 ± 0.009 | 0.704 | 0.229 | 0.345 |
+| Full | Financial (leak-free) | LR | 0.633 ± 0.008 | 0.626 | 0.209 | 0.313 |
+| Full | Financial (leak-free) | SVM | 0.632 ± 0.009 | 0.681 | 0.199 | 0.307 |
+| Cohort | Leak-free | LR | 0.587 ± 0.051 | 0.507 | 0.606 | 0.545 |
+| Cohort | Leak-free + Coverage | LR | 0.593 ± 0.021 | 0.558 | 0.604 | 0.573 |
+| Cohort | Leak-free + Sentiment | LR | 0.581 ± 0.038 | 0.569 | 0.604 | 0.570 |
+| Cohort | Leak-free | SVM | 0.587 ± 0.037 | 0.468 | 0.611 | 0.523 |
+| Cohort | Leak-free + Coverage | SVM | 0.591 ± 0.028 | 0.449 | 0.625 | 0.521 |
+| Cohort | Leak-free + Sentiment | SVM | 0.580 ± 0.028 | 0.463 | 0.607 | 0.519 |
+
+- On the full population, the leak-free model finds about two-thirds of
+  closures (recall 0.63–0.68) at precision ~0.20, against a base rate of
+  0.13.
+- Precision is not comparable between the two populations, because the
+  cohort is 50% closed by design.
+- At a single threshold, the cohort differences between feature sets
+  (≤ 0.013 balanced accuracy) are well inside the fold-to-fold spread
+  (sd 0.02–0.05). The threshold-free AUC comparison in §4.5 is the
+  better-powered test.
+- An earlier version of the protocol tuned thresholds for closed-class F1.
+  On the balanced cohort this degenerated to predicting nearly everything
+  closed (recall ≈ 0.97, balanced accuracy ≈ 0.52), so it was replaced
+  (see §5.4). AUC values were unaffected.
+
+## 4.7 What the model learned (standardised LR coefficients, cohort, leak-free + sentiment)
+
+| Feature | Coefficient | Reading |
+|---|---|---|
+| `yearsSinceFirstFunding` | −0.45 | The longer since the first round, the more likely closed (more time in which to have failed by the snapshot) |
+| `country=RUS` | −0.45 | |
+| `negativeNewsCount` | **+0.41** | Counter-intuitive: driven by Craigslist (operating) with many crime headlines (§4.3) |
+| `category=Curated Web` | −0.37 | |
+| `hasAnyCoverage` | +0.34 | Having news → more likely operating (§4.2) |
+| `negativeRatio` | −0.25 | The expected direction once volume is accounted for |
+| `yearsFoundedToFirstFunding` | +0.21 | |
+
+Coefficients are on standardised features, so their magnitudes are
+comparable. Chart: `visualization/lr_coefficients.png`.
+
+## 4.8 Baseline evaluation (Phase 18) — for comparison only
+
+The original single-split evaluation (original features, news for 3
+startups, default threshold) gave AUC 0.708 (LR) and 0.726 (SVM), with
+sentiment changing 2 of 8,686 test predictions. It is superseded by
+§4.4–4.6, which are cross-validated, leak-free, and use 815 startups with
+collected news.
+
+## 4.9 Summary
+
+1. **Leakage was real and is now removed.** It inflated AUC by 0.03–0.04
+   (p < 0.001). The leak-free full-population model reaches AUC 0.679.
+2. **News volume does not improve prediction** (ΔAUC ≈ 0, p ≥ 0.57).
+3. **News tone gives a small improvement**, about +0.01 AUC for both
+   models. This is borderline evidence (p = 0.047 for one comparison, not
+   significant after multiple-comparison correction).
+4. **Matching precision (29% strict) is the main limit** on what tone can
+   show. Most accepted headlines mention a company's platform or a
+   different entity.

@@ -108,7 +108,7 @@ def plot_forest(sig: pd.DataFrame) -> None:
         color = MODEL_COLORS[r["model"]] if significant else "#8A97A8"
         ax.plot([r["ci_low"], r["ci_high"]], [i, i], color=color, lw=2)
         ax.plot(r["delta_auc"], i, "o", color=color)
-        ax.text(max(r["ci_high"], 0) + 0.004, i, f"{r['delta_auc']:+.3f}  (p={r['p_value']:.3f})",
+        ax.text(max(r["ci_high"], 0) + 0.004, i, f"{r['delta_auc']:+.3f}  (" + ("p<0.001" if r['p_value'] < 0.001 else f"p={r['p_value']:.3f}") + ")",
                 va="center", fontsize=8)
     ax.axvline(0, color="black", lw=1)
     ax.set_yticks(range(len(sig)))

@@ -1,142 +1,168 @@
 # 5. Discussion
 
-## 5.1 Why the sentiment comparison is inconclusive
+## 5.1 Answering the research question
 
-The central result is that adding sentiment changed almost nothing (§4.3).
-The cause is coverage, not the sentiment method:
+> Does incorporating public news sentiment about a startup improve the
+> predictive accuracy of a survival classifier, compared with structured
+> attributes alone?
 
-- Batch news collection across the eligible population was planned
-  (Phase 13, "Next") but not run. Sentiment exists for only **3 startups**:
-  Kabbage, Color Labs and Pinterest.
-- For the other 22,072 startups, all 12 sentiment features are a constant
-  zero baseline. A constant column carries no information, and Spark's
-  standardisation leaves it contributing only to the intercept.
-- With at most three informative rows, spread randomly between training and
-  test sets, no classifier could learn a sentiment effect, and no evaluation
-  could detect one.
+**Our answer is "slightly, and not conclusively".** On a balanced cohort of
+815 startups:
 
-The correct conclusion is therefore **"not tested at sufficient scale"**,
-not "sentiment does not help". The pipeline itself is shown to work end to
-end: collection, matching, scoring, feature extraction, the full-population
-`leftOuterJoin` and both feature sets run correctly on real data. Only the
-volume of collected news is missing.
+- **Whether a startup had news, and how much, adds nothing** (ΔAUC ≈ 0,
+  p ≥ 0.57), even though covered startups were more likely to survive.
+- **What the news said adds about +0.01 AUC** with both models. The effect
+  is in the same direction for LR and SVM and for both nested comparisons.
+  Only one test reaches p < 0.05 (LR, tone beyond coverage, p = 0.047), and
+  none survive a Bonferroni correction for the eight cohort comparisons.
 
-### Expected confounding even at full scale
+The honest summary is a small, consistent and *suggestive* signal from
+tone that this sample cannot establish firmly. The design allowed "yes",
+"no" and "inconclusive" as outcomes, and we report the one the data
+supports.
 
-Phase 7's live tests found that news coverage tracks funding size: Pinterest
-($1.3B) returned 100 pre-cutoff items, while smaller startups returned far
-fewer. Even with full collection, `newsCount` and `hasAnyCoverage` may act
-partly as **proxies for funding size** rather than as independent sentiment
-signal. A fair test should compare (a) coverage-only features against
-(b) coverage plus tone features, so that the effect of *what the news says*
-can be separated from the effect of *whether there is news*.
+## 5.2 Why the sentiment signal is weak
 
-## 5.2 A leakage issue found during analysis
+Three limits compound one another. Each is measured, not assumed:
 
-`fundingDataLeakageSafe` was designed as the transparency flag for the Phase
-11 leakage guard, and it is set to 1 when `last_funding_at` is before the
-cutoff. But the *value of the flag itself* depends on post-cutoff
-information:
+1. **Coverage.** Only 69 of 815 startups (8.5%) have any accepted
+   pre-2013 headline. For the other 91.5%, every news feature is the zero
+   baseline, so at most 8.5% of rankings can change. Most 2011–2012
+   startups were simply not covered by news indexed in Google News.
+2. **Matching precision.** In the audit, only 29% of accepted headlines
+   were news about the company. Another 38% mention its platform (most
+   often crime reports involving Craigslist), and 33% concern a different
+   entity altogether. The clearest symptom is in the coefficients:
+   `negativeNewsCount` has a *positive* coefficient (+0.41), because an
+   operating company, Craigslist, is surrounded by headlines like "Craigslist
+   killer jailed", which the lexicon correctly scores as negative, but which
+   say nothing about Craigslist's health as a business.
+3. **Tone resolution.** 87% of accepted headlines score Neutral. The
+   lexicon only fires on explicit business vocabulary (raises, shuts,
+   layoffs), and most headlines are descriptive. It also has no negation
+   handling, so "can't buy success" scores positive.
 
-- Flag = 0 for 6,911 startups (31.3%), almost all because their latest
-  round happened **on or after 2013-01-01**. That means the company was still active and raising
-  money after the prediction date, which is strongly associated with being
-  "operating" in the 2014 snapshot.
-- `timeSinceLastFundingDays` is imputed as 0 for exactly these rows, so it
-  carries the same information.
+Under these conditions, a +0.01 AUC is roughly what would be expected even
+if tone were genuinely informative: the signal is diluted by noise
+(precision) and confined to a small minority of startups (coverage). A
+null result here would not have shown that sentiment is useless, and a
+borderline positive result cannot show that it is useful.
 
-This is consistent with the learned model. `fundingDataLeakageSafe` has the
-largest coefficient (−1.26), meaning that startups whose funding *stopped*
-before 2013 are predicted to be less likely to survive. The guard
-successfully prevents post-cutoff *amounts* from leaking, but the indicator
-reveals that post-cutoff *events* exist.
+### Volume versus tone
 
-**Impact:** the financial-only AUC of ≈ 0.71–0.73 is probably optimistic.
-Because both feature sets share this flag, the comparison between them is
-still internally fair, but the absolute performance should be quoted with
-this caveat.
+Because coverage tracks funding and visibility (Phase 7), we tested the
+two separately: Leak-free ⊂ + Coverage ⊂ + Sentiment. Volume alone
+contributes nothing beyond the leak-free features, so the small
+improvement comes from the tone features. That is the more interesting
+direction for the research question. Without this nested design, any gain
+could have been attributed to "famous companies survive".
 
-**Fix (future work):** remove `fundingDataLeakageSafe`, and replace the
-post-cutoff-dependent fields with features computable from information
-available at T only. For example, compute "time since last pre-cutoff
-round" from per-round dates (which needs the round-level Crunchbase
-`investments` table identified in Phase 1). Then re-run Experiments 1–4.
+## 5.3 The leakage we found, measured and removed
 
-## 5.3 Interpreting the model effect
+The original financial set had a leakage guard, but the guard's own flag
+leaked. `fundingDataLeakageSafe = 0` meant "the latest round was on or after
+2013-01-01", which means the company was still raising money after the
+prediction date. It had the largest coefficient in the original model
+(−1.26). Cross-validation on all 22,075 startups puts the inflation at
+**0.044 AUC for LR and 0.028 for SVM (both p < 0.001)**.
 
-The SVM achieves a higher AUC but lower accuracy and F1. These are not in
-conflict:
+The leak-free set uses only founding date, first-funding date, category
+and country, and still reaches AUC 0.679. That is a real but modest signal,
+and it is the honest baseline for the sentiment comparison. The general
+lesson is worth stating: **a missing-value indicator is itself a feature**,
+and if the *reason* a value is missing involves the future, the indicator
+leaks even when the value itself is withheld.
 
-- AUC measures *ranking* across all thresholds.
-- Accuracy and F1 measure one fixed threshold (margin = 0 for the SVM, and
-  probability = 0.5 for LR).
+## 5.4 Evaluation choices, and one we corrected
 
-With balanced class weights, the SVM's hinge loss pushes its boundary toward
-the majority class, so it flags 66% of operating startups as closed. Its
-ranking is still slightly better. Threshold tuning on a validation split
-(for example, choosing the threshold that maximises closed-class F1) would
-give a fairer comparison of the two models. It was deliberately not tuned
-on the test set, which would have leaked test information into model
-selection.
+- **AUC-ROC is the primary metric** because it ignores both prevalence and
+  threshold. That makes it comparable between the full population (13%
+  closed) and the balanced cohort (50%), and suitable for case-control
+  sampling.
+- **Thresholds.** Our first protocol tuned the decision threshold to
+  maximise closed-class F1. On the balanced cohort this degenerates:
+  predicting *every* startup closed already scores F1 = 0.667, and the tuned
+  thresholds drifted to ~97% closed-recall with balanced accuracy ≈ 0.52.
+  We switched the objective to balanced accuracy (Youden's J), which is
+  prevalence-independent and consistent with balanced class weights. AUC
+  results are unaffected by the change.
+- **Paired comparisons.** Every comparison uses the same folds and
+  resamples the same startups for both feature sets, so the confidence
+  intervals reflect the feature difference, not split-to-split noise.
+  Fold-level standard deviations (0.02–0.03 AUC in the cohort) are larger
+  than the effects being tested, which is why the pairing matters.
 
-**Low accuracy is expected here, not a defect.** Without class weighting,
-both models collapsed to "always operating" (≈ 87% accuracy and near-zero
-closure recall; see `ClassWeights.scala`). Weighting trades raw accuracy for
-the ability to identify closures, which is the outcome of interest.
+## 5.5 Model comparison
 
-## 5.4 Limitations
+With leak-free features, LR and SVM perform almost identically on the full
+population (AUC 0.679 vs 0.679), and LR is slightly ahead on the cohort
+(0.650 vs 0.634). The earlier impression that the SVM ranks better came
+partly from the leaky features. LR has the practical advantage of
+probability outputs, which is why the dashboard uses it.
 
-1. **News coverage:** only 3 of 22,075 startups (§5.1).
-2. **Post-cutoff information in two financial features** (§5.2).
-3. **Label noise:** "operating" in a ~2014 snapshot may include startups that
-   had failed but were not yet recorded (right-censoring). The 2013 cutoff
-   reduces this risk but does not remove it.
-4. **Excluded statuses:** acquired and IPO startups (7,096 rows) are excluded,
-   so the results do not generalise to exit outcomes.
-5. **Sentiment lexicon:** the lexicon is word-level only, with no negation
-   handling ("$41 million can't buy success" scores Neutral), no stemming
-   ("acquire" is not in the lexicon), and no phrase or sarcasm detection.
-6. **Name matching:** the ≤ 4-character ambiguity guard misses long generic
-   names. "Pinterest" matched a listicle that used the word as a common noun.
-7. **Missing planned features:** investor counts, largest round size,
-   category and country were not used.
-8. **A single train/test split** (seed 42) with no confidence intervals.
-   Differences in the third decimal place between experiments should not be
-   read as significant.
-9. **Single-node cluster:** HDFS and Spark ran pseudo-distributed on one WSL2
-   machine (`local[*]`), so the work demonstrates the distributed programming
-   model but not multi-node scaling.
+## 5.6 Limitations
 
-## 5.5 Future work
+1. **Small, sparse news cohort.** The cohort has 815 startups and 69 with
+   coverage, limited by Google News rate limits (about 125–480 queries per
+   hour). The tone coefficients are learned from those 69 startups and are
+   unstable. In the exported dashboard model, for example,
+   `sentimentVolatility` carries a raw weight of −2.49, so two headlines
+   with different scores swing an individual prediction sharply. The
+   cross-validated AUC, which averages over startups, is the reliable
+   summary; single predictions from the news model are not.
+2. **Matching precision of 29% (strict)**, measured on 100 headlines judged
+   by a single annotator; the sample is dominated by a few prolific names.
+3. **Lexicon sentiment:** 87% of headlines are neutral, and there is no
+   negation or stemming.
+4. **Static attributes may have been edited after 2013.** Category and
+   country could have been updated after the cutoff. They describe what a
+   company is rather than how it fared, so we judge this much weaker than
+   the removed funding leak.
+5. **Label noise.** An "operating" status in a ~2014 snapshot can include
+   startups that had failed but were not yet recorded. The early cutoff
+   reduces this but cannot remove it.
+6. **Excluded outcomes.** Acquired and IPO companies (7,096 rows) are
+   excluded, so the results do not cover exits.
+7. **Multiple comparisons.** The one p < 0.05 result is not robust to
+   correction.
+8. **Single-node cluster.** The work demonstrates the distributed
+   programming model, not multi-node scaling.
 
-1. **Batch news collection** across a large sample of the 22,075 startups
-   (with rate limiting and checkpointing), followed by a re-run of
-   Experiments 1–4. This is the single step that would make the research
-   question answerable.
-2. **Remove the leaky indicator** and rebuild the recency features from
-   round-level data (§5.2).
-3. **Threshold tuning** on a held-out validation split, plus k-fold
-   cross-validation with confidence intervals.
-4. **A coverage-versus-tone ablation** to separate the effect of news volume
-   from the effect of sentiment (§5.1).
-5. **Improved sentiment scoring:** negation scope, stemming, or a
-   domain-adapted lexicon or model, compared against the current
-   transparent baseline.
-6. **Categorical features** (industry, country) through one-hot encoding.
+## 5.7 Future work
+
+1. **More coverage, better precision.** Continue the resumable collection
+   (the remaining ~5,000 closed and operating startups in the
+   balanced order), and require contextual cues for generic names
+   (company domain, founder name, or an "acquires/raises/launches" verb
+   next to the name).
+2. **Better tone.** Use negation scope, stemming, or a domain-adapted
+   sentence model, compared against the current transparent baseline on
+   the same folds.
+3. **Round-level funding data** (Crunchbase `investments.csv`) to restore
+   pre-cutoff funding amounts without leakage.
+4. **A pre-registered single comparison** (tone beyond coverage, LR) on a
+   larger, independent cohort, to confirm or refute the borderline effect
+   without a multiple-comparison penalty.
 
 # 6. Conclusion
 
-This project built and verified a complete Big Data pipeline (HDFS, Hive,
-functional Scala, Spark RDDs and MLlib) for testing whether news sentiment
-improves startup-survival prediction, with careful controls on temporal
-leakage throughout. On the real 22,075-startup dataset:
+We built and verified a complete Big Data pipeline (HDFS, Hive, functional
+Scala, Spark RDDs and MLlib) to test whether news sentiment improves
+startup-survival prediction under strict temporal controls. We added
+large-scale news collection, a leak-free feature set, cross-validated
+evaluation with paired bootstrap confidence intervals, and 31 unit tests.
 
-- Financial features give moderate predictive signal (AUC ≈ 0.71–0.73).
-  This is probably inflated by one leaky indicator, which we identified
-  during analysis.
-- Logistic Regression gives better-balanced predictions at the default
-  threshold, while the linear SVM ranks slightly better.
-- The research question itself remains **open**. With news matched for only
-  3 startups, the sentiment features could not influence the models
-  (2 of 8,686 test predictions changed). The infrastructure to answer the
-  question is in place, and the next step is batch news collection.
+- **Leakage was the largest effect we found.** A missing-value flag in the
+  original features carried post-cutoff information and inflated AUC by
+  0.03–0.04. Without it, financial and structural attributes give AUC 0.68.
+- **News volume does not help, and news tone helps a little.** Tone adds
+  about +0.01 AUC with both models; this is borderline evidence that does
+  not survive correction for multiple comparisons.
+- **The bottleneck is data quality, not the pipeline.** Only 8.5% of
+  startups have matched pre-2013 news, and only 29% of matched headlines
+  are genuinely about the company.
+
+The research question is therefore partly answered. Sentiment carries at
+most a small signal at this coverage and matching precision. The pipeline
+is resumable and fully reproducible, so it can test the question properly
+as more and cleaner news is collected.
