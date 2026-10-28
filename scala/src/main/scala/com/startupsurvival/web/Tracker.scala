@@ -34,7 +34,8 @@ object Tracker {
       outcome: Option[String] = None,
       outcomeDate: Option[String] = None,
       note: Option[String] = None,
-      sources: List[String] = Nil
+      sources: List[String] = Nil,
+      keywords: List[String] = Nil // a founder or product, used to scope searches for common-word names
   )
 
   private val NamePattern = """^[\p{L}\p{N} .&'+-]{2,60}$""".r
@@ -43,13 +44,17 @@ object Tracker {
     require(NamePattern.findFirstIn(p.name.trim).isDefined, "name must be 2-60 letters, digits, spaces or .&'+-")
     require(p.country.forall(_.matches("[A-Za-z]{0,3}")), "country must be a 3-letter code")
     require(p.categories.length <= 10 && p.categories.forall(c => c.length <= 40 && !c.contains('|')), "at most 10 categories of 40 characters")
+    require(p.keywords.length <= 3 && p.keywords.forall(k => NamePattern.findFirstIn(k.trim).isDefined), "at most 3 keywords of 2-60 letters, digits or spaces")
   }
 
   def loadProfiles(path: String): List[Profile] =
     parse(new String(Files.readAllBytes(Paths.get(path)), UTF_8)).extract[List[Profile]]
 
-  def check(p: Profile, asOf: LocalDate, models: Models, timeoutMs: Int): Map[String, Any] = {
-    val fetched = NewsCollector.fetchUrl(NewsCollector.buildRssUrl(p.name, asOf), timeoutMs)
+  def check(p: Profile, asOf: LocalDate, models: Models, timeoutMs: Int, bounds: Server.Maturity = Server.Maturity.Design): Map[String, Any] = {
+    val fetched = NewsCollector.fetchUrl(NewsCollector.buildRssUrl(p.name, asOf, p.keywords), timeoutMs)
+    val scoped = p.keywords.nonEmpty
+    def confidence(text: String) =
+      (if (scoped) NameMatcher.confirmCommonWord(p.name, text) else NameMatcher.computeMatchConfidence(p.name, text)).confidence
     val windowStart = asOf.minusMonths(24)
     val raw = fetched.toOption.toList.flatMap(NewsCollector.parseRssItems).flatMap { item =>
       NewsCollector.parsePubDate(item.pubDateRaw)
@@ -57,20 +62,21 @@ object Tracker {
         .map(d => (d, NewsRDD.stripSourceSuffix(item.title, item.source.getOrElse(""))))
     }
     val accepted = raw
-      .filter { case (_, text) => NameMatcher.computeMatchConfidence(p.name, text).confidence >= NameMatcher.AcceptanceThreshold }
+      .filter { case (_, text) => confidence(text) >= NameMatcher.AcceptanceThreshold }
       .groupBy(_._2.toLowerCase).values.map(_.minBy(_._1.toEpochDay)) // Google repeats titles across outlets
       .toList.sortBy(_._1.toEpochDay)
       .takeRight(50)
       .map { case (d, text) => Headline(d.toString, text) }
 
     val prediction = Server.predict(
-      PredictRequest(p.foundedAt, p.firstFundingAt, Some(p.categories), p.country, Some(accepted)), models, asOf)
+      PredictRequest(p.foundedAt, p.firstFundingAt, Some(p.categories), p.country, Some(accepted)), models, asOf, bounds)
     prediction - "financial" ++ Map(
       "profile" -> p,
       "asOf" -> asOf.toString,
       "checkedAt" -> Instant.now().toString,
       "rawHeadlines" -> raw.size,
       "ambiguousName" -> NameMatcher.isAmbiguousName(p.name),
+      "scopedSearch" -> scoped,
       "newsError" -> fetched.failed.toOption.map(e => s"${e.getClass.getSimpleName}: ${e.getMessage}")
     )
   }
@@ -89,8 +95,9 @@ object Tracker {
   }
 
   /** The live watchlist: curated startups plus visitor-added ones, re-checked on a schedule. */
-  final class Watch(models: Models, curated: List[Profile], periodHours: Int = 6) {
-    // ponytail: visitor additions live in memory and reset on restart; a Render Key Value store if they must persist.
+  final class Watch(models: Models, curated: List[Profile], bounds: Server.Maturity, store: Option[Store], periodHours: Int = 6) {
+    // Visitor profiles persist in the key-value store when KV_URL is set; their scores are recomputed on each run.
+    private val StoreKey = "watchlist:visitors"
     private val visitors = new ConcurrentHashMap[String, Profile]()
     private val visitorOrder = new java.util.concurrent.ConcurrentLinkedQueue[String]()
     private val results = new ConcurrentHashMap[String, Map[String, Any]]()
@@ -105,7 +112,7 @@ object Tracker {
     private def key(name: String) = NameMatcher.normalize(name)
 
     private def score(p: Profile, timeoutMs: Int): Map[String, Any] =
-      Try(check(p, LocalDate.now(), models, timeoutMs))
+      Try(check(p, LocalDate.now(), models, timeoutMs, bounds))
         .getOrElse(Map("profile" -> p, "error" -> "could not score this profile"))
 
     private def runOne(p: Profile, timeoutMs: Int): Unit = results.put(key(p.name), score(p, timeoutMs))
@@ -116,7 +123,21 @@ object Tracker {
       finally { running = false; lastRun = Some(Instant.now()) }
     }
 
+    private def save(): Unit = store.foreach { kv =>
+      val ordered = visitorOrder.asScala.toList.flatMap(k => Option(visitors.get(k)))
+      Try(kv.set(StoreKey, org.json4s.jackson.Serialization.write(ordered)))
+        .failed.foreach(e => println(s"[WARN] could not save visitors: ${e.getMessage}"))
+    }
+
     def start(): Unit = {
+      store.foreach { kv =>
+        Try(kv.get(StoreKey).toList.flatMap(json => parse(json).extract[List[Profile]])) match {
+          case scala.util.Success(saved) =>
+            saved.takeRight(MaxVisitors).foreach { p => visitors.put(key(p.name), p); visitorOrder.add(key(p.name)) }
+            println(s"Restored ${saved.size} visitor startups from the key-value store")
+          case scala.util.Failure(e) => println(s"[WARN] key-value store unavailable, visitors start empty: ${e.getMessage}")
+        }
+      }
       val scheduler = Executors.newSingleThreadScheduledExecutor()
       scheduler.scheduleAtFixedRate(() => Try(refresh()), 0, periodHours.toLong, TimeUnit.HOURS)
     }
@@ -148,10 +169,11 @@ object Tracker {
       val k = key(profile.name)
       require(curated.forall(c => key(c.name) != k), s"${profile.name} is already on the watchlist")
       // Bad dates throw here and reach the visitor as a 400; news failures are recorded in the result.
-      val result = check(profile, LocalDate.now(), models, 4000) // under the server's 10s response limit
+      val result = check(profile, LocalDate.now(), models, 4000, bounds) // under the server's 10s response limit
       if (visitors.put(k, profile) == null) visitorOrder.add(k)
       results.put(k, result)
       while (visitors.size > MaxVisitors) Option(visitorOrder.poll()).foreach { o => visitors.remove(o); results.remove(o) }
+      save()
       result
     }
   }

@@ -4,94 +4,97 @@ import { caseStudies, model } from "../lib/data.js";
 
 const cases = caseStudies.cases;
 const hits = cases.filter((c) => c.correct).length;
-const withNews = cases.filter((c) => c.financialSentiment != null);
-const newsHits = withNews.filter((c) => (c.financialSentiment >= 0.5) === (c.profile.outcome === "operating")).length;
 const closed = cases.filter((c) => c.profile.outcome === "closed").length;
+const featured = ["Software", "Mobile", "E-Commerce", "Finance", "Health Care", "Education", "SaaS", "Games"];
 ---
 
-<Base title="Startups · Startup Survival" description="Real startups scored by the pipeline: eight with known endings, a live watchlist re-checked every six hours, and your own." page="startups">
-  <section style="padding-top: 160px">
-    <h1 class="display title">Real startups, real endings</h1>
-    <p class="lede">
-      We picked {closed} startups that shut down and {cases.length - closed} that made it, checked their dates against public sources,
-      and asked the pipeline about each one as of a date when its fate was still open.
-    </p>
-    <div class="verdicts">
-      <div>
-        <span class="num">{hits} of {cases.length}</span>
-        <p>called right by the structural model, which uses age, time since first funding, category and country.</p>
-      </div>
-      <div>
-        <span class="num">{newsHits} of {withNews.length}</span>
-        <p>called right by the news model, for the startups whose name actually matched headlines.</p>
-      </div>
-      <div>
-        <span class="num">0.68</span>
-        <p>is the model's cross-validated AUC. Famous companies are outliers, so a near coin-flip on eight of them is what that number predicts.</p>
-      </div>
+<Base title="Real startups · Survival" description="Real startups scored by the pipeline: eight with known endings, a live watchlist, and your own." page="startups">
+  <section style="padding-bottom: 40px">
+    <div class="head center" style="margin: 0 auto">
+      <h1 class="h1">Real startups</h1>
+      <p class="lede">See how the pipeline does on companies whose story we already know, follow some whose story is still being written, and add your own.</p>
+      <nav class="tabs" aria-label="On this page">
+        <a href="#endings">Known endings</a>
+        <a href="#watchlist">Watchlist</a>
+        <a href="#add">Add yours</a>
+      </nav>
     </div>
   </section>
 
-  <section class="rule" id="cases-section">
-    <h2 class="display h2">Eight known endings</h2>
-    <p class="lede narrow">
-      Each startup is scored two years after its first funding round, or six months before it shut down if that came sooner,
-      using only news from the two years before that date. The marker shows the structural model; the small red marker is the news model.
-      Dates known only to the year are set to 1 July.
-    </p>
-    <ol class="ledger" id="cases"></ol>
+  <section id="endings" style="padding-top: 60px">
+    <div class="head center">
+      <h2 class="h2">Known endings</h2>
+      <p class="lede">
+        {closed} that closed and {cases.length - closed} that made it, each scored as of a date when its fate was still open.
+        The model called <span class="glow">{hits} of {cases.length}</span> correctly, close to a coin flip, which is roughly what a
+        modest model does on famous outliers.
+      </p>
+    </div>
+    <ol class="list" id="cases"></ol>
     <script type="application/json" id="case-data" set:html={JSON.stringify(cases)}></script>
+    <details class="more" style="max-width: 1000px">
+      <summary>How these were chosen and scored</summary>
+      <p class="muted">
+        Founding dates, first funding rounds and outcomes were checked against the public sources linked in each row; dates known
+        only to the year are set to 1 July. Each startup is scored two years after its first round, or six months before it shut
+        down if that came sooner, using only news from the two years before that date, the same shape as the training data.
+      </p>
+    </details>
   </section>
 
-  <section class="rule" id="watchlist">
-    <h2 class="display h2">The live watchlist</h2>
-    <p class="lede narrow">
-      Well-known startups whose story is still being written. A scheduler on the server pulls their last two years of Google News,
-      matches and scores it, and re-runs both models every six hours.
-    </p>
-    <p class="note narrow">
-      Read these as the model's view, not a forecast. It lowers a startup's score the longer it has been since its first
-      round, and every startup it learned from was judged within a few years of that round, so mature companies like
-      Stripe score low by extrapolation. Names that are ordinary words, like Ramp or Notion, get no news signal.
-    </p>
-    <p class="status" id="watch-status" aria-live="polite">Loading the latest check.</p>
-    <p class="offline" hidden>The watchlist and the form below need the Scala server. From <code>scala/</code>, run <code>sbt "runMain com.startupsurvival.web.Server"</code> and open <code>localhost:8080/startups/</code>.</p>
-    <ol class="ledger" id="watch-curated"></ol>
-
-    <h3 class="display h3" style="margin-top: 96px">Added by visitors</h3>
-    <ol class="ledger" id="watch-visitors"></ol>
+  <section id="watchlist">
+    <div class="head center">
+      <h2 class="h2">The watchlist</h2>
+      <p class="lede">Well-known startups, re-checked against fresh Google News every six hours.</p>
+    </div>
+    <p class="status" id="watch-status" aria-live="polite">Loading the latest check…</p>
+    <p class="offline center" hidden>The watchlist needs the Scala server. From <code>scala/</code>, run <code>sbt "runMain com.startupsurvival.web.Server"</code> and open <code>localhost:8080/startups/</code>.</p>
+    <ol class="list" id="watch-curated"></ol>
+    <h3 class="h3 center" style="margin-top: 96px; text-align: center">Added by visitors</h3>
+    <ol class="list" id="watch-visitors"></ol>
   </section>
 
-  <section class="rule" id="add">
-    <h2 class="display h2">Add your startup</h2>
-    <p class="lede narrow">
-      It runs through the same pipeline straight away and joins the visitor list, which the scheduler re-checks with everything else.
-      The list is kept in memory, so it resets when the server restarts.
-    </p>
-    <form class="tool" id="track-form" style="padding-left: 0; padding-right: 0; max-width: 880px">
-      <div class="cols">
-        <div>
+  <section id="add">
+    <div class="head center">
+      <h2 class="h2">Add yours</h2>
+      <p class="lede">It goes through the same pipeline straight away and joins the watchlist.</p>
+    </div>
+    <form class="card" id="track-form" style="max-width: 720px; margin: 0 auto">
+      <div class="fields">
+        <div class="field full">
           <label for="t-name">Company name</label>
           <input id="t-name" name="name" required minlength="2" maxlength="60" placeholder="As it appears in the press" />
+        </div>
+        <div class="field">
           <label for="t-founded">Founded</label>
           <input id="t-founded" name="foundedAt" type="date" required />
+        </div>
+        <div class="field">
           <label for="t-first">First funding round</label>
           <input id="t-first" name="firstFundingAt" type="date" required />
         </div>
-        <div>
-          <label for="t-country">Country</label>
-          <select id="t-country" name="country">
-            {model.countries.map((c) => <option selected={c === "USA"}>{c}</option>)}
-            <option value="">other</option>
-          </select>
-          <label for="t-cats">Categories (ctrl or ⌘-click for several)</label>
-          <select id="t-cats" name="categories" multiple size="6">
-            {model.categories.map((c) => <option>{c}</option>)}
-            <option value="other">other</option>
-          </select>
-        </div>
+        <details class="inline full">
+          <summary>More details (optional)</summary>
+          <div class="fields">
+            <div class="field full">
+              <label for="t-country">Country</label>
+              <select id="t-country" name="country">
+                {model.countries.map((c) => <option selected={c === "USA"}>{c}</option>)}
+                <option value="">Somewhere else</option>
+              </select>
+            </div>
+            <fieldset class="chips full">
+              <legend>What does it do?</legend>
+              {featured.map((c) => <label class="chip"><input type="checkbox" name="categories" value={c} /><span>{c}</span></label>)}
+            </fieldset>
+            <div class="field full">
+              <label for="t-keywords">Known for, comma separated (helps when the name is an everyday word)</label>
+              <input id="t-keywords" name="keywords" maxlength="140" placeholder="A founder's name, a product" />
+            </div>
+          </div>
+        </details>
       </div>
-      <button>Score and track</button>
+      <div class="actions" style="justify-content: flex-start; margin-top: 24px"><button>Score and follow</button></div>
       <p class="error" role="alert"></p>
     </form>
   </section>

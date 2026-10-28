@@ -4,8 +4,8 @@ import "../styles/global.css";
 const { title, description, page } = Astro.props;
 const links = [
   ["/", "Overview", "home"],
-  ["/how-it-works/", "How it works", "how"],
   ["/startups/", "Startups", "startups"],
+  ["/how-it-works/", "How it works", "how"],
 ];
 ---
 
@@ -16,15 +16,16 @@ const links = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#13112a" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..600,0..100&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono&display=swap" rel="stylesheet" />
   </head>
   <body data-page={page}>
     <a class="skip" href="#main">Skip to content</a>
     <header class="nav">
-      <a class="wordmark" href="/">Survival</a>
+      <a class="wordmark" href="/">Survival <i>.:*</i></a>
       <nav aria-label="Pages">
         {links.map(([href, label, key]) => (
           <a href={href} aria-current={key === page ? "page" : undefined}>{label}</a>
@@ -32,12 +33,20 @@ const links = [
       </nav>
       <a class="live" href="/startups/#watchlist" data-live hidden><span class="pulse" aria-hidden="true"></span><span data-live-text>Watchlist</span></a>
     </header>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <linearGradient id="dawn" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f08fa8" /><stop offset="0.5" stop-color="#ffc49b" /><stop offset="1" stop-color="#8fe3c8" />
+        </linearGradient>
+      </defs>
+    </svg>
     <main id="main">
       <slot />
     </main>
     <footer class="foot">
-      <p>A Big Data end-semester project in Scala and Apache Spark. Every number on this site is read from <code>results/</code> at build time or computed live by the Scala server.</p>
-      <p>Data: Crunchbase snapshot via Kaggle (CDLA-Sharing 1.0). Source on <a href="https://github.com/AnushreeKasturi/bda_endsem">GitHub</a>.</p>
+      <p class="ascii-rule" aria-hidden="true">·  .  :  ·  *  ·  :  .  ·</p>
+      <p>A Big Data end-semester project in Scala and Apache Spark. Results are read from <code>results/</code>; live scores come from the Scala server.</p>
+      <p>Data: Crunchbase snapshot via Kaggle (CDLA-Sharing 1.0). <a href="https://github.com/AnushreeKasturi/bda_endsem">Source on GitHub</a>.</p>
     </footer>
     <script>import "../scripts/live.js";</script>
   </body>

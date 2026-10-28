@@ -30,9 +30,11 @@ object NewsCollector {
   )
 
   /** `before:`/`after:` are best-effort; collectFor re-filters by date. */
-  def buildRssUrl(companyName: String, cutoff: LocalDate = PredictionCutoff): String = {
+  def buildRssUrl(companyName: String, cutoff: LocalDate = PredictionCutoff, context: List[String] = Nil): String = {
     val windowStart = cutoff.minusMonths(LookbackMonths)
-    val query = s""""$companyName" before:${cutoff} after:${windowStart}"""
+    // Context keywords (a founder, a product) scope searches for names that are ordinary words.
+    val scope = if (context.isEmpty) "" else context.map(k => s""""$k"""").mkString(" (", " OR ", ")")
+    val query = s""""$companyName"$scope before:${cutoff} after:${windowStart}"""
     val encoded = URLEncoder.encode(query, "UTF-8")
     s"https://news.google.com/rss/search?q=$encoded&hl=en-US&gl=US&ceid=US:en"
   }

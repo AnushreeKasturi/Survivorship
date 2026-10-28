@@ -157,4 +157,11 @@ class ModelingSpec extends AnyFunSuite {
     validate(quibi)
     assertThrows[IllegalArgumentException](validate(quibi.copy(name = "<script>")))
   }
+
+  test("maturity warning levels") {
+    val m = com.startupsurvival.web.Server.Maturity.Design
+    assert(m.describe(2.0)("level") == "young")
+    assert(m.describe(6.0)("level") == "older")
+    assert(m.describe(15.0)("level") == "established")
+  }
 }

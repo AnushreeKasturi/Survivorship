@@ -1,52 +1,12 @@
 [
-  {
-    "name": "Perplexity", "foundedAt": "2022-08-10", "firstFundingAt": "2022-09-01",
-    "categories": ["Software"], "country": "USA",
-    "sources": ["https://hub-prod.perplexity.ai/hub/blog/announcing-our-series-a-funding-round-and-mobile-app-launch"]
-  },
-  {
-    "name": "Mistral AI", "foundedAt": "2023-05-01", "firstFundingAt": "2023-06-13",
-    "categories": ["Software"], "country": "FRA",
-    "sources": ["https://tech.eu/2023/06/14/fantastique-french-start-up-mistral-ai-raises-a-105-million-seed-round-in-its-first-month-of-existence"]
-  },
-  {
-    "name": "Ramp", "foundedAt": "2019-07-01", "firstFundingAt": "2020-02-01",
-    "categories": ["Finance"], "country": "USA",
-    "sources": ["https://pulse2.com/ramp-corporate-card-launch-and-25-million-funding/"]
-  },
-  {
-    "name": "Linear", "foundedAt": "2019-07-01", "firstFundingAt": "2019-11-20",
-    "categories": ["SaaS"], "country": "USA",
-    "sources": ["https://linear.app/changelog/2019-11-20-secured-a-usd-4-2m-seed-round"]
-  },
-  {
-    "name": "Revolut", "foundedAt": "2015-07-01", "firstFundingAt": "2015-07-01",
-    "categories": ["Finance"], "country": "GBR",
-    "sources": ["https://seedcamp.com/company/revolut/"]
-  },
-  {
-    "name": "Vercel", "foundedAt": "2015-11-01", "firstFundingAt": "2020-04-01",
-    "categories": ["SaaS"], "country": "USA",
-    "sources": ["https://en.wikipedia.org/wiki/Vercel"]
-  },
-  {
-    "name": "Notion", "foundedAt": "2013-07-01", "firstFundingAt": "2013-07-01",
-    "categories": ["Software"], "country": "USA",
-    "sources": ["https://bullet.so/blog/history-of-notion-everything-from-users-funding-and-more/"]
-  },
-  {
-    "name": "Stripe", "foundedAt": "2010-07-01", "firstFundingAt": "2010-07-01",
-    "categories": ["Finance"], "country": "USA",
-    "sources": ["https://vator.tv/2016-12-29-when-stripe-was-young-the-early-years/"]
-  },
-  {
-    "name": "Figma", "foundedAt": "2012-07-01", "firstFundingAt": "2013-07-01",
-    "categories": ["Software"], "country": "USA",
-    "sources": ["https://www.fortune.com/2025/07/01/figma-ipo-s-1-after-20-billion-adobe-deal-abandoned-dylan-field"]
-  },
-  {
-    "name": "Duolingo", "foundedAt": "2011-07-01", "firstFundingAt": "2011-10-01",
-    "categories": ["Education"], "country": "USA",
-    "sources": ["https://en.wikipedia.org/wiki/Duolingo"]
-  }
+  {"name": "Perplexity", "foundedAt": "2022-08-10", "firstFundingAt": "2022-09-01", "categories": ["Software"], "country": "USA", "sources": ["https://hub-prod.perplexity.ai/hub/blog/announcing-our-series-a-funding-round-and-mobile-app-launch"], "keywords": ["Aravind Srinivas", "AI search", "answer engine"]},
+  {"name": "Mistral AI", "foundedAt": "2023-05-01", "firstFundingAt": "2023-06-13", "categories": ["Software"], "country": "FRA", "sources": ["https://tech.eu/2023/06/14/fantastique-french-start-up-mistral-ai-raises-a-105-million-seed-round-in-its-first-month-of-existence"]},
+  {"name": "Ramp", "foundedAt": "2019-07-01", "firstFundingAt": "2020-02-01", "categories": ["Finance"], "country": "USA", "sources": ["https://pulse2.com/ramp-corporate-card-launch-and-25-million-funding/"], "keywords": ["Eric Glyman", "corporate card", "fintech"]},
+  {"name": "Linear", "foundedAt": "2019-07-01", "firstFundingAt": "2019-11-20", "categories": ["SaaS"], "country": "USA", "sources": ["https://linear.app/changelog/2019-11-20-secured-a-usd-4-2m-seed-round"], "keywords": ["Karri Saarinen", "issue tracker", "project management"]},
+  {"name": "Revolut", "foundedAt": "2015-07-01", "firstFundingAt": "2015-07-01", "categories": ["Finance"], "country": "GBR", "sources": ["https://seedcamp.com/company/revolut/"]},
+  {"name": "Vercel", "foundedAt": "2015-11-01", "firstFundingAt": "2020-04-01", "categories": ["SaaS"], "country": "USA", "sources": ["https://en.wikipedia.org/wiki/Vercel"]},
+  {"name": "Notion", "foundedAt": "2013-07-01", "firstFundingAt": "2013-07-01", "categories": ["Software"], "country": "USA", "sources": ["https://bullet.so/blog/history-of-notion-everything-from-users-funding-and-more/"], "keywords": ["Ivan Zhao", "productivity app", "Notion AI"]},
+  {"name": "Stripe", "foundedAt": "2010-07-01", "firstFundingAt": "2010-07-01", "categories": ["Finance"], "country": "USA", "sources": ["https://vator.tv/2016-12-29-when-stripe-was-young-the-early-years/"], "keywords": ["Patrick Collison", "John Collison", "payments"]},
+  {"name": "Figma", "foundedAt": "2012-07-01", "firstFundingAt": "2013-07-01", "categories": ["Software"], "country": "USA", "sources": ["https://www.fortune.com/2025/07/01/figma-ipo-s-1-after-20-billion-adobe-deal-abandoned-dylan-field"]},
+  {"name": "Duolingo", "foundedAt": "2011-07-01", "firstFundingAt": "2011-10-01", "categories": ["Education"], "country": "USA", "sources": ["https://en.wikipedia.org/wiki/Duolingo"]}
 ]

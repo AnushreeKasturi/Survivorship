@@ -43,6 +43,33 @@ object Server {
     }
   }
 
+  /**
+   * When to warn that a company is older than the model's world. The model's
+   * weight on years since first funding is negative, so its score keeps
+   * falling with age; past these bounds that says more about age than survival.
+   */
+  final case class Maturity(olderAfter: Double, establishedAfter: Double, source: String) {
+    def describe(years: Double): Map[String, Any] = Map(
+      "yearsSinceFirstFunding" -> years,
+      "level" -> (if (years >= establishedAfter) "established" else if (years >= olderAfter) "older" else "young"),
+      "olderAfter" -> olderAfter,
+      "establishedAfter" -> establishedAfter,
+      "source" -> source
+    )
+  }
+  object Maturity {
+    val Design = Maturity(5, 10, "design rule: 5 and 10 years after the first round")
+
+    /** The 90th and 99th percentiles from results/feature_ranges.json when spark.FeatureRanges has been run. */
+    def load(path: String): Maturity =
+      scala.util.Try {
+        val ranges = parse(new String(Files.readAllBytes(Paths.get(path)), UTF_8)) \ "yearsSinceFirstFunding"
+        val p90 = (ranges \ "p90").extract[Double]
+        val p99 = (ranges \ "p99").extract[Double]
+        Maturity(p90, p99, f"training data: 90%% of startups were within $p90%.1f years of their first round, 99%% within $p99%.1f")
+      }.getOrElse(Design)
+  }
+
   final case class Headline(date: String, text: String)
   final case class PredictRequest(
       foundedAt: String,
@@ -75,7 +102,7 @@ object Server {
    * training, just "as of now" instead of 2013-01-01. Only the leak-free
    * inputs are asked for, so no lifetime funding totals.
    */
-  def predict(req: PredictRequest, models: Models, cutoff: LocalDate = LocalDate.now()): Map[String, Any] = {
+  def predict(req: PredictRequest, models: Models, cutoff: LocalDate = LocalDate.now(), bounds: Maturity = Maturity.Design): Map[String, Any] = {
     val founded = date("foundedAt", req.foundedAt)
     val firstFunding = date("firstFundingAt", req.firstFundingAt)
     require(founded.isBefore(cutoff), s"foundedAt must be before $cutoff")
@@ -103,6 +130,7 @@ object Server {
       "financialOnly" -> models.financialOnly.probability(safe),
       "financialSentiment" -> (if (scored.isEmpty) None else Some(models.financialSentiment.probability(withNews))),
       "financial" -> financial,
+      "maturity" -> bounds.describe(financial.yearsSinceFirstFunding),
       "sentiment" -> sentimentFeatures,
       "headlines" -> headlines.map(h => sentiment(h.text) + ("text" -> h.text) + ("date" -> h.date))
     )
@@ -187,8 +215,10 @@ object Server {
     val host = sys.env.getOrElse("HOST", "127.0.0.1")
     val server = HttpServer.create(new InetSocketAddress(host, port), 0)
     server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(8))
-    val watch = new Tracker.Watch(models, Tracker.loadProfiles(sys.env.getOrElse("WATCHLIST", "../startups/watchlist.json")))
-    api(server, "/api/predict")((_, body) => predict(parse(body).extract[PredictRequest], models))
+    val bounds = Maturity.load(sys.env.getOrElse("FEATURE_RANGES", "../results/feature_ranges.json"))
+    val store = sys.env.get("KV_URL").filter(_.nonEmpty).map(new Store(_))
+    val watch = new Tracker.Watch(models, Tracker.loadProfiles(sys.env.getOrElse("WATCHLIST", "../startups/watchlist.json")), bounds, store)
+    api(server, "/api/predict")((_, body) => predict(parse(body).extract[PredictRequest], models, LocalDate.now(), bounds))
     api(server, "/api/sentiment")((_, body) => sentiment(parse(body).extract[SentimentRequest].headline))
     api(server, "/api/watchlist", "GET")((_, _) => watch.snapshot)
     api(server, "/api/track")((ex, body) => watch.track(parse(body).extract[Tracker.Profile], client(ex)))

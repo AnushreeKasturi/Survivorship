@@ -84,6 +84,20 @@ object NameMatcher {
     }
   }
 
+  /**
+   * Live tools only, never training: a common-word name (Ramp, Notion) is
+   * accepted at 0.7 when the news search was already scoped by the company's
+   * context keywords and the headline spells the name exactly as the company
+   * does, capitalised and as a whole word.
+   */
+  def confirmCommonWord(companyName: String, headline: String): MatchResult = {
+    val base = computeMatchConfidence(companyName, headline)
+    val exact = ("(^|[^\\p{L}\\p{N}])" + java.util.regex.Pattern.quote(companyName.trim) + "($|[^\\p{L}\\p{N}])").r
+    if (base.matched && base.confidence < AcceptanceThreshold && exact.findFirstIn(headline).isDefined)
+      MatchResult(matched = true, 0.7, "common-word name, spelled as the company does in a context-scoped search")
+    else base
+  }
+
   def filterMatches[A](companyName: String, candidates: List[A])(headlineOf: A => String): List[(A, MatchResult)] =
     candidates
       .map(item => (item, computeMatchConfidence(companyName, headlineOf(item))))

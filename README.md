@@ -89,12 +89,25 @@ cd scala && sbt "runMain com.startupsurvival.web.Tracker"   # writes results/cas
 The watchlist is scored live: the server re-checks `startups/watchlist.json`
 plus visitor additions every six hours, with today as the cutoff.
 `.github/workflows/watchlist.yml` wakes the free Render instance on the same
-schedule. Visitor additions live in memory and reset when the server restarts.
+schedule. Set `KV_URL` (a `redis://` URL, such as a Render Key Value internal
+URL) to keep visitor additions across restarts; without it they live in memory.
+
+Two live-only adjustments, never used in training:
+
+- **Everyday-word names** (Ramp, Notion, Stripe): profiles can list `keywords`
+  (a founder, a product). The news search is narrowed with them, and a
+  headline must spell the name exactly as the company does.
+- **Maturity warning:** the model's weight on years since the first round is
+  negative, so long-established companies score low by extrapolation. The site
+  flags companies 5+ years past their first round and fades the score at 10+.
+  Run `sbt "runMain com.startupsurvival.spark.FeatureRanges"` on the real data
+  to write `results/feature_ranges.json`; the server then uses the training
+  data's 90th and 99th percentiles instead of those design bounds.
 
 ```bash
 cd web && npm ci && npm run build       # Node 22.12+
 cd ../scala && sbt "runMain com.startupsurvival.web.Server"
-# http://localhost:8080   (HOST, PORT, SITE_DIR, MODEL_COEFFICIENTS, WATCHLIST env vars override defaults)
+# http://localhost:8080   (HOST, PORT, SITE_DIR, MODEL_COEFFICIENTS, WATCHLIST, KV_URL, FEATURE_RANGES env vars)
 ```
 
 For front-end work, run `npm run dev` in `web/` with the Scala server still

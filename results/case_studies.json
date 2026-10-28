@@ -1,8 +1,15 @@
 {
-  "generatedAt" : "2026-10-28T15:50:49.842389Z",
+  "generatedAt" : "2026-10-28T16:17:09.525037Z",
   "threshold" : 0.5,
   "cases" : [ {
     "asOf" : "2020-04-21",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 1.7221081451060918,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
     "correct" : false,
     "sentiment" : {
       "permalink" : "/demo",
@@ -18,9 +25,10 @@
       "sentimentVolatility" : 0.4040610178208843,
       "newsVolumeTrend" : 50.0
     },
-    "checkedAt" : "2026-10-28T15:50:34.523784Z",
+    "checkedAt" : "2026-10-28T16:16:55.412230Z",
     "financialOnly" : 0.5232091581502474,
     "financialSentiment" : 0.11205526625734963,
+    "scopedSearch" : false,
     "profile" : {
       "name" : "Quibi",
       "foundedAt" : "2018-08-01",
@@ -30,7 +38,8 @@
       "outcome" : "closed",
       "outcomeDate" : "2020-10-21",
       "note" : "Founded as NewTV in August 2018 with a $1B first round. Shutdown announced October 21, 2020.",
-      "sources" : [ "https://en.wikipedia.org/wiki/Quibi", "https://news.crunchbase.com/startups/quibi-shutting-down/" ]
+      "sources" : [ "https://en.wikipedia.org/wiki/Quibi", "https://news.crunchbase.com/startups/quibi-shutting-down/" ],
+      "keywords" : [ ]
     },
     "rawHeadlines" : 56,
     "headlines" : [ {
@@ -136,13 +145,6 @@
       "score" : 0,
       "text" : "John Travolta to Star Opposite Kevin Hart in Quibi Action Series ‘Die Hart’",
       "date" : "2020-02-04",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Quibi touts $750-million haul in second fundraising round",
-      "date" : "2020-03-04",
       "class" : "Neutral",
       "negativeTerms" : [ ]
     }, {
@@ -261,6 +263,13 @@
       "positiveTerms" : [ ],
       "score" : 0,
       "text" : "Everything You Need to Know About Quibi, the New Short-Form Streaming Service",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Review: New Streamer Quibi Shows Off Its Short Shorts",
       "date" : "2020-04-06",
       "class" : "Neutral",
       "negativeTerms" : [ ]
@@ -387,6 +396,13 @@
     "ambiguousName" : false
   }, {
     "asOf" : "2015-07-01",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 1.998631074606434,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
     "correct" : false,
     "sentiment" : {
       "permalink" : "/demo",
@@ -398,8 +414,9 @@
       "negativeRatio" : 0.0,
       "averageSentiment" : 0.0
     },
-    "checkedAt" : "2026-10-28T15:50:36.328517Z",
+    "checkedAt" : "2026-10-28T16:16:56.975868Z",
     "financialOnly" : 0.6162086883874595,
+    "scopedSearch" : false,
     "profile" : {
       "name" : "Juicero",
       "foundedAt" : "2013-07-01",
@@ -409,26 +426,40 @@
       "outcome" : "closed",
       "outcomeDate" : "2017-09-01",
       "note" : "Founded and first funded in 2013 (month not public). Announced it was shutting down on September 1, 2017.",
-      "sources" : [ "https://techcrunch.com/2017/09/01/rip-juicero-the-400-venture-backed-juice-machine/", "https://www.failory.com/cemetery/juicero" ]
+      "sources" : [ "https://techcrunch.com/2017/09/01/rip-juicero-the-400-venture-backed-juice-machine/", "https://www.failory.com/cemetery/juicero" ],
+      "keywords" : [ ]
     },
     "rawHeadlines" : 2,
     "headlines" : [ ],
     "ambiguousName" : false
   }, {
     "asOf" : "2021-10-05",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 1.596167008898015,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
     "correct" : false,
     "sentiment" : {
       "permalink" : "/demo",
-      "newsCount" : 0,
-      "positiveNewsCount" : 0,
+      "newsCount" : 6,
+      "positiveNewsCount" : 5,
       "negativeNewsCount" : 0,
-      "neutralNewsCount" : 0,
-      "positiveRatio" : 0.0,
+      "neutralNewsCount" : 1,
+      "positiveRatio" : 0.8333333333333334,
       "negativeRatio" : 0.0,
-      "averageSentiment" : 0.0
+      "averageSentiment" : 0.8333333333333334,
+      "recentSentiment" : 0.0,
+      "sentimentTrend" : -0.33333333333333337,
+      "sentimentVolatility" : 0.408248290463863,
+      "newsVolumeTrend" : 2.0
     },
-    "checkedAt" : "2026-10-28T15:50:38.584619Z",
+    "checkedAt" : "2026-10-28T16:16:58.518322Z",
     "financialOnly" : 0.5192890238531696,
+    "financialSentiment" : 0.7922024938710062,
+    "scopedSearch" : true,
     "profile" : {
       "name" : "Fast",
       "foundedAt" : "2019-07-01",
@@ -438,26 +469,82 @@
       "outcome" : "closed",
       "outcomeDate" : "2022-04-05",
       "note" : "One-click checkout, founded 2019. Earliest reported round is the Stripe-led Series A in March 2020. Shut down April 5, 2022.",
-      "sources" : [ "https://www.wfae.org/2022-04-05/fast-the-easy-checkout-startup-shuts-down-after-burning-through-investors-money", "https://www.fintechfutures.com/fintech/stripe-backed-one-click-checkout-fintech-fast-folds" ]
+      "sources" : [ "https://www.wfae.org/2022-04-05/fast-the-easy-checkout-startup-shuts-down-after-burning-through-investors-money", "https://www.fintechfutures.com/fintech/stripe-backed-one-click-checkout-fintech-fast-folds" ],
+      "keywords" : [ "Domm Holland", "one-click checkout" ]
     },
-    "rawHeadlines" : 98,
-    "headlines" : [ ],
+    "rawHeadlines" : 9,
+    "headlines" : [ {
+      "positiveTerms" : [ "hires" ],
+      "score" : 1,
+      "text" : "Startup Fast hires Jason Alderman as first CCO",
+      "date" : "2020-04-07",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launches" ],
+      "score" : 1,
+      "text" : "Fast Launches One-Click Checkout for Every Device, Platform and Browser",
+      "date" : "2020-09-02",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "raise" ],
+      "score" : 1,
+      "text" : "Pitch Deck Fast Used to Raise $20 Million From Fintech Stripe",
+      "date" : "2020-11-03",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "funding" ],
+      "score" : 1,
+      "text" : "Stripe leads $102 million funding round for online checkout start-up Fast",
+      "date" : "2021-01-26",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "funding" ],
+      "score" : 1,
+      "text" : "Fast Announces $102 Million in Series B Funding, Fueling Rapid Adoption of One-Click Checkout Across the Internet",
+      "date" : "2021-01-26",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "How online checkout startup Fast is reinventing online shopping",
+      "date" : "2021-08-10",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    } ],
     "ambiguousName" : true
   }, {
     "asOf" : "2017-07-01",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 2.001368925393566,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
     "correct" : false,
     "sentiment" : {
       "permalink" : "/demo",
-      "newsCount" : 0,
-      "positiveNewsCount" : 0,
+      "newsCount" : 2,
+      "positiveNewsCount" : 1,
       "negativeNewsCount" : 0,
-      "neutralNewsCount" : 0,
-      "positiveRatio" : 0.0,
+      "neutralNewsCount" : 1,
+      "positiveRatio" : 0.5,
       "negativeRatio" : 0.0,
-      "averageSentiment" : 0.0
+      "averageSentiment" : 0.5,
+      "recentSentiment" : 1.0,
+      "sentimentTrend" : 1.0,
+      "sentimentVolatility" : 0.7071067811865476,
+      "newsVolumeTrend" : 2.0
     },
-    "checkedAt" : "2026-10-28T15:50:40.630518Z",
+    "checkedAt" : "2026-10-28T16:17:01.669375Z",
     "financialOnly" : 0.5486373030559604,
+    "financialSentiment" : 0.24292449359781773,
+    "scopedSearch" : true,
     "profile" : {
       "name" : "Convoy",
       "foundedAt" : "2015-07-01",
@@ -467,13 +554,35 @@
       "outcome" : "closed",
       "outcomeDate" : "2023-10-19",
       "note" : "Digital freight broker founded and first backed by angels in 2015. Shut down operations October 19, 2023.",
-      "sources" : [ "https://fortune.com/2023/10/19/convoy-trucking-tech-startup-shuts-down-jeff-bezos-investor", "https://www.bloomberg.com/news/articles/2023-10-19/bezos-backed-startup-convoy-closes-operations-with-no-buyer" ]
+      "sources" : [ "https://fortune.com/2023/10/19/convoy-trucking-tech-startup-shuts-down-jeff-bezos-investor", "https://www.bloomberg.com/news/articles/2023-10-19/bezos-backed-startup-convoy-closes-operations-with-no-buyer" ],
+      "keywords" : [ "Dan Lewis", "Grant Goodale", "digital freight" ]
     },
-    "rawHeadlines" : 41,
-    "headlines" : [ ],
+    "rawHeadlines" : 3,
+    "headlines" : [ {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Tech Moves: Convoy investor Grant Ries joins startup as chief business officer; HomeAway names John Kim president; and more",
+      "date" : "2016-09-26",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "best" ],
+      "score" : 1,
+      "text" : "Working Geek: How Convoy CTO Grant Goodale gets his best ideas",
+      "date" : "2016-10-06",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    } ],
     "ambiguousName" : true
   }, {
     "asOf" : "2011-01-01",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 1.998631074606434,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
     "correct" : false,
     "sentiment" : {
       "permalink" : "/demo",
@@ -489,9 +598,10 @@
       "sentimentVolatility" : 0.7071067811865476,
       "newsVolumeTrend" : 2.0
     },
-    "checkedAt" : "2026-10-28T15:50:42.449931Z",
+    "checkedAt" : "2026-10-28T16:17:03.294488Z",
     "financialOnly" : 0.47753722009943916,
     "financialSentiment" : 0.17986650888891179,
+    "scopedSearch" : false,
     "profile" : {
       "name" : "Airbnb",
       "foundedAt" : "2008-08-01",
@@ -501,7 +611,8 @@
       "outcome" : "operating",
       "outcomeDate" : "2020-12-10",
       "note" : "Founded August 2008; Y Combinator in January 2009, Sequoia seed in April 2009. Public since December 2020.",
-      "sources" : [ "https://en.wikipedia.org/wiki/Airbnb" ]
+      "sources" : [ "https://en.wikipedia.org/wiki/Airbnb" ],
+      "keywords" : [ ]
     },
     "rawHeadlines" : 3,
     "headlines" : [ {
@@ -522,19 +633,32 @@
     "ambiguousName" : false
   }, {
     "asOf" : "2012-07-01",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 2.001368925393566,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
     "correct" : true,
     "sentiment" : {
       "permalink" : "/demo",
-      "newsCount" : 0,
-      "positiveNewsCount" : 0,
+      "newsCount" : 3,
+      "positiveNewsCount" : 2,
       "negativeNewsCount" : 0,
-      "neutralNewsCount" : 0,
-      "positiveRatio" : 0.0,
+      "neutralNewsCount" : 1,
+      "positiveRatio" : 0.6666666666666666,
       "negativeRatio" : 0.0,
-      "averageSentiment" : 0.0
+      "averageSentiment" : 0.6666666666666666,
+      "recentSentiment" : 0.0,
+      "sentimentTrend" : -0.5,
+      "sentimentVolatility" : 0.5773502691896258,
+      "newsVolumeTrend" : 1.0
     },
-    "checkedAt" : "2026-10-28T15:50:44.551475Z",
+    "checkedAt" : "2026-10-28T16:17:04.864671Z",
     "financialOnly" : 0.5015381889397125,
+    "financialSentiment" : 0.46975172606770527,
+    "scopedSearch" : true,
     "profile" : {
       "name" : "Stripe",
       "foundedAt" : "2010-07-01",
@@ -543,13 +667,42 @@
       "country" : "USA",
       "outcome" : "operating",
       "note" : "Founded 2010 as /dev/payments with Y Combinator seed money that year (month disputed). Still private and operating.",
-      "sources" : [ "https://vator.tv/2016-12-29-when-stripe-was-young-the-early-years/", "https://www.startupgrind.com/blog/the-collison-brothers-and-story-behind-the-founding-of-stripe" ]
+      "sources" : [ "https://vator.tv/2016-12-29-when-stripe-was-young-the-early-years/", "https://www.startupgrind.com/blog/the-collison-brothers-and-story-behind-the-founding-of-stripe" ],
+      "keywords" : [ "Patrick Collison", "John Collison", "payments" ]
     },
-    "rawHeadlines" : 27,
-    "headlines" : [ ],
+    "rawHeadlines" : 26,
+    "headlines" : [ {
+      "positiveTerms" : [ "invests" ],
+      "score" : 1,
+      "text" : "Peter Thiel invests in Collison brothers’ latest venture Stripe",
+      "date" : "2011-03-29",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "backed" ],
+      "score" : 1,
+      "text" : "Inside Stripe, The PayPal Competitor Backed By PayPal Founders Peter Thiel, Elon Musk",
+      "date" : "2012-02-01",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Stripe Aims to Reinvent E-Payments",
+      "date" : "2012-02-23",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    } ],
     "ambiguousName" : true
   }, {
     "asOf" : "2015-07-01",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 1.998631074606434,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
     "correct" : true,
     "sentiment" : {
       "permalink" : "/demo",
@@ -565,9 +718,10 @@
       "sentimentVolatility" : 0.0,
       "newsVolumeTrend" : 2.0
     },
-    "checkedAt" : "2026-10-28T15:50:46.373177Z",
+    "checkedAt" : "2026-10-28T16:17:06.420537Z",
     "financialOnly" : 0.5628592132831154,
     "financialSentiment" : 0.40167875795300906,
+    "scopedSearch" : false,
     "profile" : {
       "name" : "Figma",
       "foundedAt" : "2012-07-01",
@@ -577,7 +731,8 @@
       "outcome" : "operating",
       "outcomeDate" : "2025-07-31",
       "note" : "Founded 2012; Index Ventures led the 2013 seed. Listed on the NYSE July 31, 2025.",
-      "sources" : [ "https://www.fortune.com/2025/07/01/figma-ipo-s-1-after-20-billion-adobe-deal-abandoned-dylan-field", "https://www.bloomberg.com/news/articles/2025-07-30/figma-said-expected-to-price-ipo-above-range-at-33-per-share" ]
+      "sources" : [ "https://www.fortune.com/2025/07/01/figma-ipo-s-1-after-20-billion-adobe-deal-abandoned-dylan-field", "https://www.bloomberg.com/news/articles/2025-07-30/figma-said-expected-to-price-ipo-above-range-at-33-per-share" ],
+      "keywords" : [ ]
     },
     "rawHeadlines" : 33,
     "headlines" : [ {
@@ -794,6 +949,13 @@
     "ambiguousName" : false
   }, {
     "asOf" : "2013-10-01",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 2.001368925393566,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
     "correct" : true,
     "sentiment" : {
       "permalink" : "/demo",
@@ -809,9 +971,10 @@
       "sentimentVolatility" : 0.39477101697586126,
       "newsVolumeTrend" : 8.0
     },
-    "checkedAt" : "2026-10-28T15:50:48.333865Z",
+    "checkedAt" : "2026-10-28T16:17:08.014868Z",
     "financialOnly" : 0.6519376142319036,
     "financialSentiment" : 0.6683898549281077,
+    "scopedSearch" : false,
     "profile" : {
       "name" : "Duolingo",
       "foundedAt" : "2011-07-01",
@@ -821,7 +984,8 @@
       "outcome" : "operating",
       "outcomeDate" : "2021-07-28",
       "note" : "Founded 2011; $3.3M Series A led by Union Square Ventures in October 2011. Nasdaq IPO July 28, 2021.",
-      "sources" : [ "https://en.wikipedia.org/wiki/Duolingo" ]
+      "sources" : [ "https://en.wikipedia.org/wiki/Duolingo" ],
+      "keywords" : [ ]
     },
     "rawHeadlines" : 32,
     "headlines" : [ {

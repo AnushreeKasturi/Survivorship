@@ -120,4 +120,12 @@ class TextPipelineSpec extends AnyFunSuite {
     val h = NewsRDD.stripSourceSuffix("Apple earnings preview - Seeking Alpha", "Seeking Alpha")
     assert(NameMatcher.computeMatchConfidence("Seeking Alpha", h).confidence < NameMatcher.AcceptanceThreshold)
   }
+
+  test("common-word names: accepted only when spelled as the company does (live tools)") {
+    assert(NameMatcher.computeMatchConfidence("Ramp", "Ramp raises $150M for its corporate card").confidence == 0.3)
+    assert(NameMatcher.confirmCommonWord("Ramp", "Ramp raises $150M for its corporate card").confidence == 0.7)
+    assert(NameMatcher.confirmCommonWord("Ramp", "Lenders ramp up card offers").confidence < NameMatcher.AcceptanceThreshold)
+    assert(NameMatcher.confirmCommonWord("Ramp", "Ramps closed on Route 9").confidence < NameMatcher.AcceptanceThreshold)
+    assert(NameMatcher.confirmCommonWord("Kabbage", "Kabbage expands lending").confidence == 1.0)
+  }
 }
