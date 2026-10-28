@@ -1,4 +1,9 @@
 ---
+// Self-hosted fonts: no request to Google, so visitors' IPs aren't shared with a third party.
+import "@fontsource/instrument-serif/400.css";
+import "@fontsource/geist/400.css";
+import "@fontsource/geist/500.css";
+import "@fontsource/geist-mono/400.css";
 import "../styles/global.css";
 
 const { title, description, page } = Astro.props;
@@ -22,9 +27,6 @@ const links = [
       try { if (localStorage.getItem("theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (e) {}
     </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500&family=Geist+Mono&display=swap" rel="stylesheet" />
   </head>
   <body data-page={page}>
     <a class="skip" href="#main">Skip to content</a>
