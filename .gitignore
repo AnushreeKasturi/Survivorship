@@ -27,3 +27,8 @@ derby.log
 .idea/
 .vscode/
 .DS_Store
+
+# Web (Astro)
+web/node_modules/
+web/dist/
+web/.astro/

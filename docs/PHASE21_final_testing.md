@@ -112,19 +112,16 @@ matches step 6's CSV exactly (this script reads that CSV directly, so a
 mismatch here would mean the file was edited or a stale copy is present
 elsewhere).
 
-## 8 — Dashboard smoke test
+## 8 — Web demo smoke test
 
 ```bash
-cd ~/startup-survival-prediction
-python -m http.server 8000
-# open http://localhost:8000/dashboard/ in a browser
+cd ~/startup-survival-prediction/web && npm ci && npm run build
+cd ../scala && sbt "runMain com.startupsurvival.web.Server"
+# open http://localhost:8080
 ```
-Expect: the four charts and the confusion-matrix grid render with the
-same numbers as step 6/7 - not the "No results loaded yet" empty state.
-If the empty state shows, check the browser console for a fetch error
-before assuming the CSV is missing (some browsers still block relative
-fetches even over `http://` depending on directory structure - the
-file-picker fallback on the page exists specifically for this case).
+Expect: the results section shows the same numbers as step 6's CSV, and the
+three lab panels (sentiment, name match, predictor) fill in on load. If the
+lab shows "needs the Scala server", the page was opened without the server.
 
 ## 9 — Re-read the report against real numbers
 

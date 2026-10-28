@@ -23,3 +23,8 @@ final case class StartupRecord(
   require(!foundedAt.isAfter(predictionCutoff.minusDays(1)),
     s"foundedAt must be strictly before predictionCutoff (leakage guard)")
 }
+
+object StartupRecord {
+  /** Retrospective cutoff T (Phase 2): features before T, label after. */
+  val PredictionCutoff: LocalDate = LocalDate.of(2013, 1, 1)
+}

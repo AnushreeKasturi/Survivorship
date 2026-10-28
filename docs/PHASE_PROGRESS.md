@@ -22,7 +22,7 @@
 | 17 | Binary SVM | M3 | Code written (Spark MLlib LinearSVC), awaiting real run |
 | 18 | Evaluate 4 experiments | M3, M4 | Code written (Evaluation.scala — runs Phases 12-18 end to end, writes results/experiment_results.csv), awaiting real run |
 | 19 | Visualisations | M4 | Code written (visualization/plot_results.py), reads real results CSV only — no placeholder data, awaiting Phase 18's real output |
-| 20 | Demonstration interface | M4 | Code written (dashboard/index.html), reads real results CSV only, awaiting Phase 18's real output |
+| 20 | Demonstration interface | M4 | Complete — Astro + GSAP site (web/) served by the Scala API server (web/Server.scala); verified in a browser against the committed results |
 | 21 | Final testing | All | Checklist written (docs/PHASE21_final_testing.md), not yet executed |
 | 22 | Report | M4 | Not started — abstract + references already drafted; methodology/results/discussion need Phase 18's real numbers first |
 | 23 | Presentation | M4 | Not started |

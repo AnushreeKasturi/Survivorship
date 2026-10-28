@@ -127,3 +127,15 @@ exist.
 RDD against `StartupRDD`'s `FinancialFeatures` at full scale, with
 `persist()` on the joined result since it feeds both the Financial-only
 and Financial+Sentiment feature sets in Phases 14–15.
+
+## RDD concepts demonstrated (viva notes)
+
+Moved here from the old header comment in `StartupRDD.scala`.
+
+- **Creation.** `sc.textFile()` reads the HDFS file as an `RDD[String]` (StartupRDD); `sc.parallelize()` distributes a driver-side collection (NewsRDD).
+- **Transformations are lazy.** `filter`, `map`, `flatMap` and `mapValues` only record lineage. `mapValues` keeps the key, and the partitioner, untouched.
+- **Actions run the job.** `count()`, `take(n)` and `collect()` execute the DAG. `collect()` is only used on small, already-aggregated results, never on the full 22,075 rows.
+- **Partitions.** `textFile` splits roughly along HDFS blocks. `map`, `filter` and `flatMap` are narrow (one input partition per output partition); `reduceByKey`, `groupByKey` and `join` shuffle and form stage boundaries.
+- **Lineage and fault tolerance.** Spark does not replicate RDD data. A lost partition is recomputed from its recorded lineage.
+- **Persistence.** `persist()` keeps computed partitions after the first action, so later actions on the same RDD don't re-read and re-parse the file.
+- **groupByKey vs reduceByKey.** `reduceByKey` pre-combines on each partition and is the default. `groupByKey` is used only where every record is needed together: sentiment trend and volatility need the full per-startup list.
