@@ -280,6 +280,15 @@ details.inline[open] > summary { margin-bottom: 14px; }
 .links strong { display: block; font: 400 40px/1.05 var(--serif); margin-bottom: 10px; }
 .links span { color: var(--muted); }
 
+/* the cookie card: here for the vibes, not for consent */
+.cookie { position: fixed; left: 20px; bottom: 20px; z-index: 60; display: flex; gap: 16px; align-items: center; max-width: 420px; padding: 18px 20px; border-radius: 22px; border: 1px solid var(--line); background: var(--surface); backdrop-filter: blur(18px); box-shadow: 0 20px 50px -20px color-mix(in srgb, var(--text) 30%, transparent); animation: rise .5s cubic-bezier(.2,.8,.2,1); }
+.cookie pre { margin: 0; font: 11px/1.15 var(--mono); background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cookie p { font-size: 14px; color: var(--muted); margin: 0 0 10px; }
+.cookie strong { color: var(--text); font-weight: 500; }
+.cookie button { margin: 0; padding: 9px 18px; font-size: 14px; }
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } }
+@media (max-width: 520px) { .cookie { left: 12px; right: 12px; bottom: 12px; max-width: none; } .cookie pre { display: none; } }
+
 .foot { padding: 64px var(--gutter) 48px; color: var(--muted); font-size: 14px; text-align: center; }
 .foot p { margin: 0 auto 8px; max-width: 80ch; }
 

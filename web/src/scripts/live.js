@@ -27,3 +27,13 @@ api("/api/watchlist")
     badge.hidden = false;
   })
   .catch(() => {});
+
+// The cookie card is just for fun: the site sets no cookies. Once dismissed, it stays gone.
+const cookie = document.querySelector("[data-cookie]");
+let dismissed = false;
+try { dismissed = localStorage.getItem("cookie-card") === "dismissed"; } catch {}
+if (!dismissed) setTimeout(() => (cookie.hidden = false), 1200);
+cookie.querySelector("[data-cookie-ok]").addEventListener("click", () => {
+  cookie.hidden = true;
+  try { localStorage.setItem("cookie-card", "dismissed"); } catch {}
+});

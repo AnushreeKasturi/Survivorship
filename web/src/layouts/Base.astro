@@ -7,6 +7,11 @@ import "@fontsource/geist-mono/400.css";
 import "../styles/global.css";
 
 const { title, description, page } = Astro.props;
+const cookieArt = String.raw`  .-"""-.
+ / o  .  \
+|  .   o  |
+ \ o   . /
+  '-...-'`;
 const links = [
   ["/", "Overview", "home"],
   ["/startups/", "Startups", "startups"],
@@ -57,6 +62,13 @@ const links = [
       <p>A Big Data end-semester project in Scala and Apache Spark. Results are read from <code>results/</code>; live scores come from the Scala server.</p>
       <p>Data: Crunchbase snapshot via Kaggle (CDLA-Sharing 1.0). <a href="https://github.com/AnushreeKasturi/bda_endsem">Source on GitHub</a>.</p>
     </footer>
+    <aside class="cookie" role="dialog" aria-label="About cookies" hidden data-cookie>
+      <pre aria-hidden="true">{cookieArt}</pre>
+      <div>
+        <p><strong>Cookies?</strong> Only the imaginary kind. Nothing here tracks you; your browser just remembers your theme.</p>
+        <button type="button" data-cookie-ok>Accept anyway</button>
+      </div>
+    </aside>
     <script>import "../scripts/live.js";</script>
   </body>
 </html>
