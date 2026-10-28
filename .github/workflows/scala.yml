@@ -1,0 +1,27 @@
+name: Scala CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scala
+    steps:
+      - uses: actions/checkout@v4
+      # JDK 8 to match the Hadoop/Hive setup (see docs/PHASE05_scala_spark_setup.md)
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 8
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - run: sbt compile package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: startup-survival-prediction-jar
+          path: scala/target/scala-2.12/*.jar
