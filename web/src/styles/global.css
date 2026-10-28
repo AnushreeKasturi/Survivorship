@@ -107,7 +107,7 @@ section { padding: 120px clamp(16px, 6vw, 96px); border-top: 1px solid var(--lin
 .panel label { font: 12px var(--mono); color: var(--muted); margin-top: 6px; }
 .panel .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 24px; }
 .panel .grid > div { display: flex; flex-direction: column; gap: 10px; }
-input, textarea {
+input, textarea, select {
   width: 100%;
   background: #000;
   border: 1px solid var(--line);
@@ -116,7 +116,7 @@ input, textarea {
   padding: 12px 14px;
   border-radius: 0;
 }
-input:focus, textarea:focus { border-color: var(--red); outline: none; }
+input:focus, textarea:focus, select:focus { border-color: var(--red); outline: none; }
 input[type="date"] { color-scheme: dark; }
 textarea { resize: vertical; line-height: 1.6; }
 button {
@@ -154,18 +154,15 @@ button:hover { background: var(--text); }
 .exp-n { font: 600 14px var(--mono); color: var(--red); }
 .exp h3 { font-size: 22px; margin-top: 8px; }
 .exp header p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
-.bar-row { display: grid; grid-template-columns: 110px 1fr 48px; gap: 12px; align-items: center; font: 12px var(--mono); margin: 10px 0; }
+.bar-row { display: grid; grid-template-columns: 150px 1fr 48px; gap: 12px; align-items: center; font: 12px var(--mono); margin: 10px 0; }
 .bar-row span:first-child { color: var(--muted); }
 .bar-row b { text-align: right; font-weight: 600; }
 .bar { height: 4px; background: var(--line); }
 .bar > span { display: block; height: 100%; width: calc(var(--w) * 100%); background: var(--red); transform-origin: left; }
-.cm { width: 100%; border-collapse: collapse; margin-top: 24px; font: 12px var(--mono); }
-.cm th { color: var(--muted); font-weight: 400; text-align: left; padding: 6px 4px; }
-.cm td { padding: 10px 4px; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
-.cm td.hit { color: var(--red); font-weight: 600; }
 
 .answer { margin-top: 96px; max-width: 900px; }
 .lifts { display: flex; flex-wrap: wrap; gap: 32px 72px; margin-bottom: 32px; }
+.ci { display: block; margin-top: 8px; font: 12px var(--mono); color: var(--muted); }
 .huge { display: block; font-size: clamp(48px, 8vw, 104px); font-weight: 700; line-height: 1; color: var(--red); font-variant-numeric: tabular-nums; }
 .answer > p { color: var(--muted); font-size: 18px; max-width: 64ch; }
 .answer h3 { font-size: 18px; margin: 48px 0 16px; }

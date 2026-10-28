@@ -79,8 +79,8 @@ stated as a limitation.
 
 `results/model_coefficients_leakfree.json` holds two leak-free LR models
 (financial-only on all startups; leak-free + coverage + tone on the
-cohort) with their category/country vocabulary. The dashboard predictor
-looks each coefficient up by feature name.
+cohort) with their category/country vocabulary. The web demo (web/Server.scala)
+checks the feature names against FeatureSets at startup.
 
 ## What to run
 

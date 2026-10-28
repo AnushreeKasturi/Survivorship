@@ -95,7 +95,7 @@ object Evaluation {
         .mkString(s"""{"intercept":${t.intercept},"features":[""", ",", "]}")
 
     s"""{
-       |  "generatedNote": "Real trained Logistic Regression coefficients from Phase 16, exported by Phase 18's Evaluation.scala. Used by the Phase 20 web demo live predictor - not a separate or fabricated model.",
+       |  "generatedNote": "Real trained Logistic Regression coefficients from Phase 16, exported by Phase 18's Evaluation.scala. Single-split Phase 18 models, including the leaky fundingDataLeakageSafe flag; the web demo uses model_coefficients_leakfree.json instead.",
        |  "financialOnly": ${modelJson(financialOnly, FeatureSets.FinancialFeatureNames)},
        |  "financialSentiment": ${modelJson(financialSentiment, FeatureSets.FinancialFeatureNames ++ FeatureSets.SentimentFeatureNames)}
        |}

@@ -136,4 +136,16 @@ class ModelingSpec extends AnyFunSuite {
     val (d, lo, _, p) = pairedBootstrap(noisy, good)
     assert(d > 0.3 && lo > 0 && p < 0.01)
   }
+
+  // ------------------------------------------------- Phase 20 web demo
+
+  test("web demo's leak-free models match FeatureSets and give probabilities") {
+    val models = com.startupsurvival.web.Server.loadModels("../results/model_coefficients_leakfree.json")
+    val req = com.startupsurvival.web.Server.PredictRequest("2019-01-01", "2020-01-01", Some(List("Software")), Some("USA"),
+      Some(List(com.startupsurvival.web.Server.Headline("2020-02-01", "Acme raises funding"))))
+    val r = com.startupsurvival.web.Server.predict(req, models)
+    val p = r("financialOnly").asInstanceOf[Double]
+    assert(p > 0 && p < 1)
+    assert(r("financialSentiment").asInstanceOf[Option[Double]].exists(x => x > 0 && x < 1))
+  }
 }

@@ -194,7 +194,7 @@ example of why precision limits the sentiment signal.
 **Q: LR or SVM?**
 They are almost identical on leak-free features (0.679 vs 0.679 on the
 full population; 0.650 vs 0.634 on the cohort). LR also gives
-probabilities, so the dashboard uses it.
+probabilities, so the web demo uses it.
 
 ## F. Testing and reproducibility (everyone)
 

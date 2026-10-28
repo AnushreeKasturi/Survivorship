@@ -321,9 +321,9 @@ object ExperimentRunner {
       names.zip(lrAll.coefficients.toArray).sortBy(-_._2.abs).foreach { case (n, c) => w.println(s"$n,$c") }
     }
 
-    // Phase 20b - leak-free models for the dashboard's live predictor.
-    // Spark returns LR coefficients on the ORIGINAL feature scale, so the
-    // browser can apply them to raw inputs directly.
+    // Phase 20b - leak-free models for the web demo's live predictor.
+    // Spark returns LR coefficients on the ORIGINAL feature scale, so
+    // web/Server.scala can apply them to raw inputs directly.
     def fitLr(df: DataFrame) = new SparkLogisticRegression().setWeightCol("weight").setMaxIter(100)
       .setRegParam(0.01).fit(Training.withBalancedWeights(df)._1)
     def json(s: String) = "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\""

@@ -98,14 +98,14 @@ With leak-free features, LR and SVM perform almost identically on the full
 population (AUC 0.679 vs 0.679), and LR is slightly ahead on the cohort
 (0.650 vs 0.634). The earlier impression that the SVM ranks better came
 partly from the leaky features. LR has the practical advantage of
-probability outputs, which is why the dashboard uses it.
+probability outputs, which is why the web demo uses it.
 
 ## 5.6 Limitations
 
 1. **Small, sparse news cohort.** The cohort has 815 startups and 69 with
    coverage, limited by Google News rate limits (about 125–480 queries per
    hour). The tone coefficients are learned from those 69 startups and are
-   unstable. In the exported dashboard model, for example,
+   unstable. In the exported web demo model, for example,
    `sentimentVolatility` carries a raw weight of −2.49, so two headlines
    with different scores swing an individual prediction sharply. The
    cross-validated AUC, which averages over startups, is the reliable

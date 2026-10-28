@@ -78,7 +78,7 @@ function onSubmit(id, handler) {
     e.preventDefault();
     form.classList.add("busy");
     try {
-      await handler(Object.fromEntries(new FormData(form)));
+      await handler(new FormData(form));
     } catch (err) {
       if (err instanceof TypeError) markOffline(); // fetch itself failed: no server
       else throw err;
@@ -93,7 +93,8 @@ function pop(el) {
   gsap.fromTo(el, { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" });
 }
 
-const sentimentForm = onSubmit("sentiment-form", async ({ headline }) => {
+const sentimentForm = onSubmit("sentiment-form", async (fd) => {
+  const headline = fd.get("headline");
   const r = await api("/api/sentiment", { headline });
   const pos = new Set(r.positiveTerms);
   const neg = new Set(r.negativeTerms);
@@ -112,8 +113,8 @@ const sentimentForm = onSubmit("sentiment-form", async ({ headline }) => {
   pop(tokens.parentElement);
 });
 
-const matchForm = onSubmit("match-form", async (body) => {
-  const r = await api("/api/match", body);
+const matchForm = onSubmit("match-form", async (fd) => {
+  const r = await api("/api/match", Object.fromEntries(fd));
   document.getElementById("m-confidence").textContent = r.confidence.toFixed(2);
   document.getElementById("m-reason").textContent = r.matched ? "accepted · " + r.reason : "rejected · " + r.reason;
   gsap.to("#m-bar", { scaleX: r.confidence, duration: 0.8, ease: "power3.out" });
@@ -131,11 +132,11 @@ const predictForm = onSubmit("predict-form", async (f) => {
   error.textContent = "";
   try {
     const r = await api("/api/predict", {
-      foundedAt: f.foundedAt,
-      lastFundingAt: f.lastFundingAt || undefined,
-      fundingUsd: f.fundingUsd === "" ? undefined : +f.fundingUsd,
-      rounds: f.rounds === "" ? undefined : +f.rounds,
-      headlines: parseHeadlines(f.headlines),
+      foundedAt: f.get("foundedAt"),
+      firstFundingAt: f.get("firstFundingAt"),
+      country: f.get("country") || undefined,
+      categories: f.getAll("categories"),
+      headlines: parseHeadlines(f.get("headlines")),
     });
     showProbability("p-fin", r.financialOnly);
     showProbability("p-sent", r.financialSentiment);

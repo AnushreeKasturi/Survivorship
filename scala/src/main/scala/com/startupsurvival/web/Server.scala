@@ -15,7 +15,7 @@ import com.startupsurvival.spark.FeatureSets
 /**
  * Serves the Astro site (web/dist) and a JSON API backed by the real
  * pipeline code - the sentiment scorer, name matcher, feature extractors and
- * the trained LR coefficients from results/model_coefficients.json.
+ * the leak-free LR models from results/model_coefficients_leakfree.json.
  *
  *   sbt "runMain com.startupsurvival.web.Server"   # from scala/, after `npm run build` in web/
  */
@@ -30,14 +30,24 @@ object Server {
       1.0 / (1.0 + math.exp(-(intercept + features.map(_.coefficient).zip(x).map { case (w, v) => w * v }.sum)))
     }
   }
-  final case class Models(financialOnly: LrModel, financialSentiment: LrModel)
+  final case class Models(categories: List[String], countries: List[String], financialOnly: LrModel, financialSentiment: LrModel) {
+    val vocab = FeatureSets.Vocab(categories.toArray, countries.toArray)
+
+    /** Fails at startup if the JSON's feature order drifts from FeatureSets'. */
+    def checkFeatureOrder(): Unit = {
+      val safe = FeatureSets.safeFeatureNames(vocab).toList
+      require(financialOnly.features.map(_.name) == safe, "financialOnly features do not match FeatureSets")
+      require(financialSentiment.features.map(_.name) == safe ++ FeatureSets.CoverageFeatureNames ++ FeatureSets.ToneFeatureNames,
+        "financialSentiment features do not match FeatureSets")
+    }
+  }
 
   final case class Headline(date: String, text: String)
   final case class PredictRequest(
       foundedAt: String,
-      lastFundingAt: Option[String],
-      fundingUsd: Option[Double],
-      rounds: Option[Int],
+      firstFundingAt: String,
+      categories: Option[List[String]],
+      country: Option[String],
       headlines: Option[List[Headline]]
   )
   final case class MatchRequest(name: String, headline: String)
@@ -61,40 +71,47 @@ object Server {
 
   /**
    * A live prediction uses today as the cutoff: the same feature code as
-   * training, just "as of now" instead of 2013-01-01.
+   * training, just "as of now" instead of 2013-01-01. Only the leak-free
+   * inputs are asked for, so no lifetime funding totals.
    */
   def predict(req: PredictRequest, models: Models): Map[String, Any] = {
     val cutoff = LocalDate.now()
     val founded = date("foundedAt", req.foundedAt)
-    val lastFunding = req.lastFundingAt.filter(_.trim.nonEmpty).map(date("lastFundingAt", _))
+    val firstFunding = date("firstFundingAt", req.firstFundingAt)
     require(founded.isBefore(cutoff), "foundedAt must be in the past")
-    require(lastFunding.forall(d => !d.isBefore(founded) && d.isBefore(cutoff)), "lastFundingAt must be between foundedAt and today")
-    require(req.fundingUsd.forall(_ >= 0) && req.rounds.forall(_ >= 0), "funding and rounds cannot be negative")
+    require(!firstFunding.isBefore(founded) && firstFunding.isBefore(cutoff), "firstFundingAt must be between foundedAt and today")
+    val categories = req.categories.getOrElse(Nil).map(_.trim).filter(_.nonEmpty)
+    require(categories.length <= 50 && categories.forall(c => c.length <= 100 && !c.contains('|')), "invalid categories")
     val headlines = req.headlines.getOrElse(Nil).filter(_.text.trim.nonEmpty)
     require(headlines.length <= MaxHeadlines, s"at most $MaxHeadlines headlines")
 
     val financial = FinancialFeatureExtractor.extractFinancialFeatures(StartupRecord(
-      permalink = "/demo", name = "demo", homepageUrl = None, categoryList = None, countryCode = None,
-      stateCode = None, region = None, city = None,
-      fundingTotalUsd = req.fundingUsd, fundingRounds = req.rounds,
-      foundedAt = founded, firstFundingAt = founded, lastFundingAt = lastFunding,
+      permalink = "/demo", name = "demo", homepageUrl = None,
+      categoryList = Some(categories.mkString("|")).filter(_.nonEmpty), countryCode = req.country.map(_.trim).filter(_.nonEmpty),
+      stateCode = None, region = None, city = None, fundingTotalUsd = None, fundingRounds = None,
+      foundedAt = founded, firstFundingAt = firstFunding, lastFundingAt = None,
       label = 1, predictionCutoff = cutoff
     ))
     val scored = headlines.map { h =>
       SentimentScorer.scoreNews(NewsRecord(h.text, Some(date("headline date", h.date)), None, None, cutoff, Some("/demo"), 1.0, None))
     }
     val sentimentFeatures = FeatureExtractor.extractSentimentFeatures("/demo", scored, cutoff)
-    val financialVector = FeatureSets.financialArray(financial)
+    val safe = FeatureSets.financialSafeArray(models.vocab)(financial)
+    val withNews = safe ++ FeatureSets.coverageArray(sentimentFeatures) ++ FeatureSets.toneArray(sentimentFeatures)
 
     Map(
-      "financialOnly" -> models.financialOnly.probability(financialVector),
-      "financialSentiment" ->
-        (if (scored.isEmpty) None
-         else Some(models.financialSentiment.probability(financialVector ++ FeatureSets.sentimentArray(sentimentFeatures)))),
+      "financialOnly" -> models.financialOnly.probability(safe),
+      "financialSentiment" -> (if (scored.isEmpty) None else Some(models.financialSentiment.probability(withNews))),
       "financial" -> financial,
       "sentiment" -> sentimentFeatures,
       "headlines" -> headlines.map(h => sentiment(h.text) + ("text" -> h.text) + ("date" -> h.date))
     )
+  }
+
+  def loadModels(path: String): Models = {
+    val models = parse(new String(Files.readAllBytes(Paths.get(path)), UTF_8)).extract[Models]
+    models.checkFeatureOrder()
+    models
   }
 
   private def send(ex: HttpExchange, status: Int, contentType: String, body: Array[Byte]): Unit = {
@@ -150,8 +167,8 @@ object Server {
   def main(args: Array[String]): Unit = {
     val port = sys.env.getOrElse("PORT", "8080").toInt
     val siteRoot = Paths.get(sys.env.getOrElse("SITE_DIR", "../web/dist")).toAbsolutePath.normalize()
-    val modelsPath = sys.env.getOrElse("MODEL_COEFFICIENTS", "../results/model_coefficients.json")
-    val models = parse(new String(Files.readAllBytes(Paths.get(modelsPath)), UTF_8)).extract[Models]
+    val modelsPath = sys.env.getOrElse("MODEL_COEFFICIENTS", "../results/model_coefficients_leakfree.json")
+    val models = loadModels(modelsPath)
 
     // Slow clients are cut off after 10s and can't starve the pool. Set before the server class loads.
     System.setProperty("sun.net.httpserver.maxReqTime", "10")

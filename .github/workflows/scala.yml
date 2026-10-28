@@ -20,7 +20,7 @@ jobs:
           java-version: 8
           cache: sbt
       - uses: sbt/setup-sbt@v1
-      - run: sbt compile package
+      - run: sbt compile package test
       # Plain-Scala phases assert their hand-verified values.
       - run: >-
           sbt "runMain com.startupsurvival.FinancialFeatureExtractor"
