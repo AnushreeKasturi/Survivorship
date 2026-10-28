@@ -97,7 +97,7 @@ object Tracker {
   /** The live watchlist: curated startups plus visitor-added ones, re-checked on a schedule. */
   final class Watch(models: Models, curated: List[Profile], bounds: Server.Maturity, store: Option[Store], periodHours: Int = 6) {
     // Visitor profiles persist in the key-value store when KV_URL is set; their scores are recomputed on each run.
-    private val StoreKey = "watchlist:visitors"
+    private val StoreKey = "startup-survival:watchlist:visitors" // namespaced: the store is shared with another project
     private val visitors = new ConcurrentHashMap[String, Profile]()
     private val visitorOrder = new java.util.concurrent.ConcurrentLinkedQueue[String]()
     private val results = new ConcurrentHashMap[String, Map[String, Any]]()
