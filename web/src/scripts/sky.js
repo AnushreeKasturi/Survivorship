@@ -17,16 +17,16 @@ export function sky(canvas) {
     canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const size = w < 600 ? 11 : 14;
-    ctx.font = `${size}px "IBM Plex Mono", monospace`;
+    ctx.font = `${size}px "Geist Mono", monospace`;
     ctx.textBaseline = "top";
     cw = size * 0.62;
     ch = size * 1.25;
     cols = Math.ceil(w / cw);
     rows = Math.ceil(h / ch);
     gradient = ctx.createLinearGradient(0, 0, w, h);
-    gradient.addColorStop(0, "#f08fa8");
-    gradient.addColorStop(0.5, "#ffc49b");
-    gradient.addColorStop(1, "#8fe3c8");
+    gradient.addColorStop(0, "#c98f45");
+    gradient.addColorStop(0.55, "#e3c182");
+    gradient.addColorStop(1, "#9cc2b2");
     let s = 2013;
     seeds = Float32Array.from({ length: cols * rows }, () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32));
   }
