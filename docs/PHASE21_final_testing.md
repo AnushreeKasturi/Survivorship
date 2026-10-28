@@ -1,9 +1,29 @@
 # Phase 21 — Final Testing
 
-**Status:** Checklist written. Not yet executed — every check below needs
-a real run on your machine, following this whole project's established
-pattern: nothing here is marked passed until you've actually run it and
-reported the real numbers back.
+**Status:** Complete. Executed 2026-10-26 on the WSL2 single-node cluster
+(Hadoop 3.3.6, Spark 3.5.1, Scala 2.12.18). Results are recorded below,
+before the original checklist.
+
+## Execution record (2026-10-26)
+
+| Step | Expect | Actual | Pass |
+|---|---|---|---|
+| 1 Infrastructure | NameNode, DataNode, SecondaryNameNode; eligible CSV in HDFS | All three running; `labeled_eligible_startups.csv` (3,777,637 bytes) present | ✅ |
+| 2 Row counts | 22075; label 0 → 2902, label 1 → 19173 | 22075; 2902 / 19173 | ✅ |
+| 3 Join | 22075 financial, 3 sentiment, 22075 combined, 3 coverage, 22072 baseline | Identical | ✅ |
+| 4 Feature sets | 22075 rows each | 22075 / 22075; widths 8 and 20 | ✅ |
+| 5 Models | No exceptions, train+test = 22075, no NaN | 17732 + 4343 for all four; 0 NaN; exit 0 | ✅ |
+| 6 Evaluation | 4 rows, metrics in [0,1], TP+TN+FP+FN = test_count | 4 rows, all sums 4343. Identical to the committed CSV except for float noise in the 16th digit | ✅ |
+| 7 Visualisations | 4 PNGs, table matches CSV | 4 PNGs written, printed table matches CSV (run on Windows Python; WSL system Python lacks numpy, so use the venv there) | ✅ |
+| 8 Dashboard | Renders real numbers | `dashboard/`, `../results/experiment_results.csv` and `../results/model_coefficients.json` all serve HTTP 200 via `python -m http.server`. Visual render not checked in a browser during this run | ⚠️ partial |
+| 9 Report vs numbers | Every number traceable | `report/results.md` is written only from the step 6 CSV and run logs | ✅ |
+
+**Finding:** during step 9, review of the coefficients showed
+that `fundingDataLeakageSafe` (and the 0-imputation of
+`timeSinceLastFundingDays`) encodes *whether* a post-cutoff funding round
+exists. See `report/discussion.md` §5.2.
+
+---
 
 ---
 

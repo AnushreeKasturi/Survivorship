@@ -5,36 +5,43 @@ import "../styles/global.css";
 
 // Baked in at build time from the pipeline's own output - never hand-edited.
 const results = path.resolve(process.cwd(), "../results");
-const [header, ...lines] = fs.readFileSync(path.join(results, "experiment_results.csv"), "utf8").trim().split("\n");
-const cols = header.split(",");
-const rows = lines.map((line) => Object.fromEntries(line.split(",").map((v, i) => [cols[i], isNaN(+v) ? v : +v])));
-const coefficients = JSON.parse(fs.readFileSync(path.join(results, "model_coefficients.json"), "utf8"));
+const read = (file) => fs.readFileSync(path.join(results, file), "utf8");
+const csv = (file) => {
+  const [header, ...lines] = read(file).trim().split("\n");
+  const cols = header.split(",");
+  return lines.map((line) => Object.fromEntries(line.split(",").map((v, i) => [cols[i], isNaN(+v) ? v : +v])));
+};
+const cv = csv("cv_summary.csv");
+const sig = csv("significance.csv");
+const weights = csv("cohort_lr_coefficients.csv").slice(0, 8);
+const model = JSON.parse(read("model_coefficients_leakfree.json"));
 
-const byName = Object.fromEntries(rows.map((r) => [r.experiment, r]));
-const lift = (a, b) => byName[b].f1_label0 - byName[a].f1_label0;
-const signed = (x, digits = 4) => (x >= 0 ? "+" : "−") + Math.abs(x).toFixed(digits);
-const pct = (x) => (x * 100).toFixed(1);
+const signed = (x, digits = 3) => (x >= 0 ? "+" : "−") + Math.abs(x).toFixed(digits);
+const short = { "Logistic Regression": "LR", "Linear SVM": "SVM" };
+const label = (r) => `${short[r.model]} · ${r.feature_set.replace("Financial ", "").replace(/[()]/g, "").replace("Leak-free + ", "+ ").toLowerCase()}`;
+const delta = (a, b) => sig.find((s) => s.model === "Logistic Regression" && s.feature_set_a === a && s.feature_set_b === b);
+const cohortSize = cv.find((r) => r.population === "cohort").n;
 
-const metrics = [
-  ["accuracy", "Accuracy"],
-  ["auc", "AUC-ROC"],
-  ["f1_label0", "F1 · closed"],
-  ["recall_label0", "Recall · closed"],
+const groups = [
+  ["Leakage check", `All ${cv[0].n.toLocaleString("en-US")} startups`, cv.filter((r) => r.population === "full")],
+  ["Does news help?", `Balanced news cohort, ${cohortSize} startups`, cv.filter((r) => r.population === "cohort")],
 ];
-
-const topWeights = [...coefficients.financialSentiment.features]
-  .sort((a, b) => Math.abs(b.coefficient) - Math.abs(a.coefficient))
-  .slice(0, 6);
+const lifts = [
+  ["Removing leaky features", delta("Financial (original)", "Financial (leak-free)")],
+  ["+ news volume", delta("Leak-free", "Leak-free + Coverage")],
+  ["+ news tone", delta("Leak-free + Coverage", "Leak-free + Sentiment")],
+];
 
 const stages = [
   ["HDFS", "Storage", "hadoop/hdfs_commands.md", "22,075 eligible startups land in HDFS after Phase 2's labelling and cutoff rules."],
   ["Hive", "Warehouse", "hive/schema.sql", "A structured table for SQL exploration, with a quote-aware SerDe after a real comma bug."],
+  ["News collection", "Scala", "BatchNewsCollector.scala", "Resumable Google News collection for a balanced 815-startup cohort, pre-2013 headlines only."],
   ["DataCleaner", "Scala", "DataCleaner.scala", "A quote-aware CSV fold turns each row into an immutable StartupRecord, or drops it."],
   ["NameMatcher", "Scala", "NameMatcher.scala", "Rejects headlines that never name the company, like Kabbage's “tomato barons” false hit."],
   ["SentimentScorer", "Scala", "SentimentScorer.scala", "Lexicon scoring with explainable term hits. Score = positive hits − negative hits."],
-  ["Feature extraction", "Scala", "FeatureExtractor.scala", "Funding features behind a leakage guard, plus 12 sentiment aggregates per startup."],
+  ["Feature extraction", "Scala", "FeatureExtractor.scala", "Only what was known at the cutoff: age, time since first funding, category, country, plus sentiment aggregates."],
   ["RDD join", "Spark", "spark/FeatureJoin.scala", "leftOuterJoin keeps every startup; no coverage means a zero sentiment baseline."],
-  ["MLlib", "Spark", "ml/Evaluation.scala", "Weighted logistic regression and linear SVM on one shared 80/20 split."],
+  ["MLlib", "Spark", "ml/ExperimentRunner.scala", "Weighted logistic regression and linear SVM, stratified 5-fold CV, paired bootstrap intervals."],
 ];
 ---
 
@@ -62,13 +69,13 @@ const stages = [
       <p class="eyebrow">Big Data end-semester · Scala + Apache Spark</p>
       <h1 class="reveal-words">Can the news tell which startups <em>die</em>?</h1>
       <p class="lede">
-        We trained four classifiers on 22,075 Crunchbase startups, with and without public news sentiment,
-        to see whether headlines add anything to funding data.
+        We trained classifiers on 22,075 Crunchbase startups, then collected pre-2013 news for a balanced cohort
+        of {cohortSize}, to see whether headlines add anything to what was known at the cutoff.
       </p>
       <dl class="stats">
         <div><dt>startups</dt><dd data-count="22075">22,075</dd></div>
         <div><dt>cutoff</dt><dd>2013‑01‑01</dd></div>
-        <div><dt>experiments</dt><dd data-count="4">4</dd></div>
+        <div><dt>news cohort</dt><dd data-count={cohortSize}>{cohortSize}</dd></div>
         <div><dt>closed</dt><dd>13%</dd></div>
       </dl>
       <span class="scroll-cue" aria-hidden="true">scroll</span>
@@ -133,18 +140,22 @@ const stages = [
             <div>
               <label for="p-founded">Founded</label>
               <input id="p-founded" name="foundedAt" type="date" value="2021-03-01" required />
-              <label for="p-last">Last funding round</label>
-              <input id="p-last" name="lastFundingAt" type="date" value="2024-06-01" />
-              <label for="p-funding">Total funding (USD)</label>
-              <input id="p-funding" name="fundingUsd" type="number" min="0" step="1000" value="4000000" />
-              <label for="p-rounds">Funding rounds</label>
-              <input id="p-rounds" name="rounds" type="number" min="0" step="1" value="2" />
+              <label for="p-first">First funding round</label>
+              <input id="p-first" name="firstFundingAt" type="date" value="2022-06-01" required />
+              <label for="p-country">Country</label>
+              <select id="p-country" name="country">
+                {model.countries.map((c) => <option selected={c === "USA"}>{c}</option>)}
+                <option value="">other</option>
+              </select>
+              <label for="p-cats">Categories (ctrl/⌘-click for several)</label>
+              <select id="p-cats" name="categories" multiple size="5">
+                {model.categories.map((c) => <option selected={c === "Software"}>{c}</option>)}
+                <option value="other">other</option>
+              </select>
             </div>
             <div>
               <label for="p-news">News, one per line as <code>YYYY-MM-DD: headline</code></label>
-              <textarea id="p-news" name="headlines" rows="7">2024-06-02: Acme raises Series A to expand into Europe
-2025-02-11: Acme faces lawsuit over delayed shipments
-2025-09-30: Acme launches partnership with major retailer</textarea>
+              <textarea id="p-news" name="headlines" rows="7" placeholder="2024-06-02: Acme raises Series A to expand into Europe&#10;2025-02-11: Acme faces lawsuit over delayed shipments"></textarea>
             </div>
           </div>
           <button>Predict</button>
@@ -152,7 +163,7 @@ const stages = [
             <div><span class="label">Financial only</span><span class="big" id="p-fin">–</span></div>
             <div><span class="label">Financial + sentiment</span><span class="big" id="p-sent">–</span></div>
           </div>
-          <p class="note">Probability of still operating, from the trained logistic regression weights. The model catches most closures but over-flags (closed recall ≈ 85%, precision ≈ 19%), so read this as a signal, not a verdict.</p>
+          <p class="note">Probability of still operating, from the leak-free logistic regression models (cross-validated AUC ≈ 0.68 without news). Treat the news score with caution: its tone weights come from only 69 cohort startups that had matched news, so a few mixed headlines can swing it to an extreme. Read both as signals, not verdicts.</p>
           <p class="error" id="p-error"></p>
         </form>
       </div>
@@ -161,49 +172,49 @@ const stages = [
     <section id="results" class="results">
       <div class="section-head">
         <p class="eyebrow">03 · results</p>
-        <h2>Four experiments, one held‑out split</h2>
-        <p class="sub">{rows[0].test_count.toLocaleString("en-US")} test startups. Logistic regression and linear SVM, each with and without sentiment features.</p>
+        <h2>Five folds, paired bootstrap</h2>
+        <p class="sub">Stratified 5-fold cross-validation; every model sees the same folds. Bars show AUC above chance (0.5).</p>
       </div>
 
       <div class="experiments">
-        {rows.map((r) => (
+        {groups.map(([title, sub, rows], i) => (
           <article class="exp">
             <header>
-              <span class="exp-n">{r.experiment.replace("Experiment ", "0")}</span>
-              <h3>{r.model}</h3>
-              <p>{r.feature_set}</p>
+              <span class="exp-n">{String(i + 1).padStart(2, "0")}</span>
+              <h3>{title}</h3>
+              <p>{sub}</p>
             </header>
-            {metrics.map(([key, label]) => (
+            {rows.map((r) => (
               <div class="bar-row">
-                <span>{label}</span>
-                <div class="bar"><span style={`--w:${r[key]}`}></span></div>
-                <b>{r[key].toFixed(3)}</b>
+                <span>{label(r)}</span>
+                <div class="bar"><span style={`--w:${(r.auc_mean - 0.5) * 2}`}></span></div>
+                <b>{r.auc_mean.toFixed(3)}</b>
               </div>
             ))}
-            <table class="cm" aria-label="Confusion matrix">
-              <tr><th></th><th>pred closed</th><th>pred open</th></tr>
-              <tr><th>closed</th><td class="hit">{r.tn}</td><td>{r.fp}</td></tr>
-              <tr><th>open</th><td>{r.fn}</td><td class="hit">{r.tp}</td></tr>
-            </table>
           </article>
         ))}
       </div>
 
       <div class="answer">
-        <p class="eyebrow">the answer, for now</p>
+        <p class="eyebrow">the answer · ΔAUC, logistic regression</p>
         <div class="lifts">
-          <div><span class="label">LR · Exp 3 − Exp 1 · F1 closed</span><span class="huge">{signed(lift("Experiment 1", "Experiment 3"))}</span></div>
-          <div><span class="label">SVM · Exp 4 − Exp 2 · F1 closed</span><span class="huge">{signed(lift("Experiment 2", "Experiment 4"))}</span></div>
+          {lifts.map(([name, d]) => (
+            <div>
+              <span class="label">{name}</span>
+              <span class="huge">{signed(d.delta_auc)}</span>
+              <span class="ci">95% CI [{signed(d.ci_low)}, {signed(d.ci_high)}] · p {d.p_value === 0 ? "< 0.001" : `= ${d.p_value.toFixed(3)}`}</span>
+            </div>
+          ))}
         </div>
         <p>
-          Sentiment changes almost nothing yet, and that is expected. Only three startups have collected news so far,
-          so the other {(22075 - 3).toLocaleString("en-US")} sit on a zero baseline. The comparison becomes meaningful once batch news collection runs.
-          Best AUC so far is {pct(Math.max(...rows.map((r) => r.auc)))}%.
+          One financial flag leaked post-cutoff events; without it, structural features still reach AUC 0.68.
+          How much news a startup had added nothing. What the news said added about 0.01 AUC: borderline,
+          and not significant after correcting for multiple comparisons.
         </p>
-        <h3>Largest learned weights (LR, financial + sentiment)</h3>
+        <h3>Largest standardised weights (LR, cohort, leak-free + sentiment)</h3>
         <ul class="weights">
-          {topWeights.map((w) => (
-            <li><code>{w.name}</code><span class={w.coefficient < 0 ? "neg" : "pos"}>{signed(w.coefficient, 3)}</span></li>
+          {weights.map((w) => (
+            <li><code>{w.feature}</code><span class={w.standardised_coefficient < 0 ? "neg" : "pos"}>{signed(w.standardised_coefficient)}</span></li>
           ))}
         </ul>
       </div>

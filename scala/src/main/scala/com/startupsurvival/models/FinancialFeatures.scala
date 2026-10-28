@@ -25,5 +25,10 @@ final case class FinancialFeatures(
     hasFundingAmountRecorded: Boolean,
     fundingDataLeakageSafe: Boolean,
     categoryList: Option[String],
-    countryCode: Option[String]
+    countryCode: Option[String],
+    // Phase 11b - fields that are known at the cutoff for EVERY startup,
+    // derived only from foundedAt/firstFundingAt (both guaranteed < cutoff
+    // by Phase 2 R4). See FinancialFeatureExtractor's Phase 11b note.
+    yearsSinceFirstFunding: Double,
+    yearsFoundedToFirstFunding: Double
 )

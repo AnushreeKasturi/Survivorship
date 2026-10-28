@@ -13,11 +13,30 @@ object NameMatcher {
     Set("inc", "llc", "ltd", "corp", "corporation", "co", "company",
         "group", "holdings", "plc", "gmbh")
 
-  /** Single word of <= 4 chars: the same "very high risk" threshold as Phase 1. */
+  /**
+   * A single word of <= 4 chars (Phase 1's "very high risk" threshold), or a
+   * single ordinary English word: the first batch run returned 43 generic hits
+   * for "Quorum". Brand coinages ("kabbage", "zuora") are not in the list.
+   */
   def isAmbiguousName(originalName: String): Boolean = {
     val trimmed = originalName.trim
-    !trimmed.exists(_.isWhitespace) && trimmed.nonEmpty && trimmed.length <= 4
+    val normTokens = normalize(originalName).split(" ").filter(_.nonEmpty)
+    (!trimmed.exists(_.isWhitespace) && trimmed.nonEmpty && trimmed.length <= 4) ||
+      (normTokens.length == 1 && isDictionaryWord(normTokens.head))
   }
+
+  /** SCOWL american-english (Debian wamerican 2020.12.07), lowercase entries only. */
+  private lazy val DictionaryWords: Set[String] =
+    Option(getClass.getResourceAsStream("/english_words.txt")).fold(Set.empty[String]) { stream =>
+      val source = scala.io.Source.fromInputStream(stream, "UTF-8")
+      try source.getLines().map(_.trim).filter(_.nonEmpty).toSet
+      finally source.close()
+    }
+
+  def isDictionaryWord(token: String): Boolean = DictionaryWords.contains(token)
+
+  /** Lowest confidence used as a sentiment feature: excludes the 0.3 ambiguous tier. */
+  val AcceptanceThreshold: Double = 0.6
 
   /** Lowercase alphanumeric tokens joined by single spaces, suffixes removed. */
   def normalize(text: String): String =
@@ -33,8 +52,9 @@ object NameMatcher {
   final case class MatchResult(matched: Boolean, confidence: Double, reason: String)
 
   /**
-   * Ambiguous short names are capped at 0.3; a full phrase match is 1.0;
-   * multi-word names with >= half their tokens present get 0.5 + 0.3 * ratio.
+   * Ambiguous names are capped at 0.3. A full phrase match is 1.0, or 0.6 when
+   * every token is a dictionary word ("Wireless Tech"). A partial match needs
+   * >= half the tokens, including a distinctive one, and gets 0.5 + 0.3 * ratio.
    */
   def computeMatchConfidence(companyName: String, headline: String): MatchResult = {
     val normName = normalize(companyName)
@@ -45,17 +65,22 @@ object NameMatcher {
       MatchResult(matched = false, 0.0, "empty normalized name")
     else if (isAmbiguousName(companyName)) {
       if (containsWholeWord(normHeadline, normName))
-        MatchResult(matched = true, 0.3, "ambiguous short name (<=4 chars, single word) - capped confidence")
+        MatchResult(matched = true, 0.3, "ambiguous name (single word, <=4 chars or a dictionary word) - capped confidence")
       else
         MatchResult(matched = false, 0.0, "ambiguous short name - no match found")
-    } else if (containsWholeWord(normHeadline, normName))
-      MatchResult(matched = true, 1.0, "exact phrase match")
-    else {
-      val matchedCount = nameTokens.count(containsWholeWord(normHeadline, _))
-      val ratio = matchedCount.toDouble / nameTokens.length
-      val detail = s"($matchedCount/${nameTokens.length} tokens)"
-      if (ratio >= 0.5) MatchResult(matched = true, 0.5 + 0.3 * ratio, s"partial token match $detail")
-      else MatchResult(matched = false, 0.0, s"insufficient token overlap $detail")
+    } else {
+      val distinctiveTokens = nameTokens.filterNot(isDictionaryWord)
+      if (containsWholeWord(normHeadline, normName)) {
+        if (distinctiveTokens.isEmpty) MatchResult(matched = true, 0.6, "exact phrase match (all dictionary words)")
+        else MatchResult(matched = true, 1.0, "exact phrase match")
+      } else {
+        val matchedCount = nameTokens.count(containsWholeWord(normHeadline, _))
+        val ratio = matchedCount.toDouble / nameTokens.length
+        val detail = s"($matchedCount/${nameTokens.length} tokens)"
+        if (ratio >= 0.5 && distinctiveTokens.exists(containsWholeWord(normHeadline, _)))
+          MatchResult(matched = true, 0.5 + 0.3 * ratio, s"partial token match $detail")
+        else MatchResult(matched = false, 0.0, s"insufficient token overlap $detail")
+      }
     }
   }
 

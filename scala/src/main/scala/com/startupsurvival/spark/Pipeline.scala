@@ -21,7 +21,7 @@ object Pipeline {
 
   def combined(spark: SparkSession, path: String): RDD[(String, CombinedFeatures)] = {
     val financialRDD = StartupRDD.extractFinancialFeaturesRDD(StartupRDD.load(spark, path))
-    val sentimentRDD = Aggregation.toSentimentFeaturesRDD(NewsRDD.load(spark).groupByKey(), Cutoff)
+    val sentimentRDD = Aggregation.toSentimentFeaturesRDD(NewsRDD.loadDemoSample(spark).groupByKey(), Cutoff)
     FeatureJoin.join(financialRDD, sentimentRDD, Cutoff)
   }
 

@@ -13,25 +13,25 @@
 | 8 | News cleaning & name matching | M2 | Complete — NameMatcher.scala compiled and verified against real Phase 7 data |
 | 9 | Scala sentiment scoring | M2 | Complete — matches brief's worked example exactly, verified against real Phase 7 data |
 | 10 | Sentiment feature engineering | M2 | Complete — FeatureExtractor.scala verified with hand-checked math on real multi-phase data |
-| 11 | Financial feature engineering | M1, M3 | Complete — leakage guard verified to actually block leaky values in a real test case |
+| 11 | Financial feature engineering | M1, M3 | Complete — leakage guard verified to block leaky amounts; its indicator flag was later found to leak post-cutoff events (fixed in 11b) |
+| 11b | Leak-free financial features | M1, M3 | Complete — age, time since first funding, founding-to-funding gap, category, country; no lifetime funding fields (docs/PHASE18b_cross_validated_experiments.md) |
 | 12 | Spark RDD pipeline | M3 | Complete — verified on real Spark (22075 confirmed via real run) |
-| 13 | Feature join | M3 | Complete — real data (Kabbage/Color Labs/Pinterest/1-800-DOCTORS), 2 real bugs found & fixed (Instructure unbacked text, Sifteo never-eligible), see docs/PHASE13_feature_join.md |
-| 14 | Financial-only feature set | M3 | Code written (FeatureSets.scala), awaiting real Spark run |
-| 15 | Financial + sentiment feature set | M3 | Code written (FeatureSets.scala), awaiting real Spark run |
-| 16 | Logistic Regression | M3 | Code written (Spark MLlib, per Phase 0/3's fixed architecture), awaiting real run — see docs/PHASE16-18_ml_setup.md first |
-| 17 | Binary SVM | M3 | Code written (Spark MLlib LinearSVC), awaiting real run |
-| 18 | Evaluate 4 experiments | M3, M4 | Code written (Evaluation.scala — runs Phases 12-18 end to end, writes results/experiment_results.csv), awaiting real run |
-| 19 | Visualisations | M4 | Code written (visualization/plot_results.py), reads real results CSV only — no placeholder data, awaiting Phase 18's real output |
-| 20 | Demonstration interface | M4 | Complete — Astro + GSAP site (web/) served by the Scala API server (web/Server.scala); verified in a browser against the committed results |
-| 21 | Final testing | All | Checklist written (docs/PHASE21_final_testing.md), not yet executed |
-| 22 | Report | M4 | Not started — abstract + references already drafted; methodology/results/discussion need Phase 18's real numbers first |
-| 23 | Presentation | M4 | Not started |
-| 24 | Viva preparation | All | Not started |
+| 13 | Feature join | M3 | Complete — real data (Kabbage/Color Labs/Pinterest/1-800-DOCTORS), 2 real bugs found & fixed, see docs/PHASE13_feature_join.md; batch-scale news added in 13b |
+| 13b | Batch news collection | M2 | Complete — BatchNewsCollector.scala (resumable, balanced case-control order), NameMatcher refinements, Hive news tables (docs/PHASE13b_batch_news_collection.md) |
+| 14 | Financial-only feature set | M3 | Complete — 22,075 rows, width 8, verified in Phase 21 |
+| 15 | Financial + sentiment feature set | M3 | Complete — 22,075 rows, width 20, verified in Phase 21 |
+| 16 | Logistic Regression | M3 | Complete — real run, balanced class weights, 17,732 / 4,343 split |
+| 17 | Binary SVM | M3 | Complete — real run, LinearSVC, same split and weights |
+| 18 | Evaluate 4 experiments | M3, M4 | Complete — results/experiment_results.csv, reproduced exactly in Phase 21 |
+| 18b | Cross-validated experiments | M3, M4 | Complete — ExperimentRunner.scala: stratified 5-fold CV, tuned thresholds, paired bootstrap CIs, coverage/tone ablation |
+| 19 | Visualisations | M4 | Complete — 4 PNGs in visualization/, generated from the real CSV |
+| 19b | CV visualisations | M4 | Complete — visualization/plot_cv_results.py (leakage, ablation, forest plot, coefficients) |
+| 20 | Demonstration interface | M4 | Complete — Astro + GSAP site (web/) served by the Scala API server (web/Server.scala) |
+| 21 | Final testing | All | Complete — checklist executed 2026-10-26; plus 31 ScalaTest unit tests (`sbt test`) |
+| 22 | Report | M4 | Draft complete — report/abstract.md, methodology.md, results.md, discussion.md, references.md. Needs team review |
+| 23 | Presentation | M4 | Draft complete — report/presentation.pptx. Needs team review |
+| 24 | Viva preparation | All | Complete — docs/PHASE24_viva_prep.md |
 
 **Rule:** do not begin a phase until the previous one is verified working.
 
-**Note (Phases 14-21):** all code for these phases was written in one
-pass and has NOT been run on real Spark/data yet - same "not yet
-verified" status as every other phase before its first real run. Run
-Phase 21's checklist in order and report back the real numbers before
-treating any of 14-20 as Complete.
+**Headline result:** see report/results.md — Phase 18b supersedes the Phase 18 single-split numbers.

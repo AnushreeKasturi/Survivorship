@@ -18,7 +18,7 @@ object Aggregation {
 
   def main(args: Array[String]): Unit = {
     val spark = Pipeline.session("Aggregation-Phase12")
-    toSentimentFeaturesRDD(NewsRDD.load(spark).groupByKey(), Pipeline.Cutoff)
+    toSentimentFeaturesRDD(NewsRDD.loadDemoSample(spark).groupByKey(), Pipeline.Cutoff)
       .collect()
       .sortBy(_._1)
       .foreach { case (permalink, features) => println(s"$permalink:\n  $features") }
