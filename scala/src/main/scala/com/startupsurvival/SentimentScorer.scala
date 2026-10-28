@@ -3,49 +3,15 @@ package com.startupsurvival
 import com.startupsurvival.models.{NewsRecord, ScoredNewsRecord, SentimentClass}
 
 /**
- * PHASE 9 - Custom Scala Sentiment Scoring
+ * PHASE 9 - Transparent lexicon-based sentiment for startup headlines.
  *
- * A transparent, explainable lexicon-based sentiment scorer for startup
- * news headlines. Deliberately NOT a call to a black-box sentiment API -
- * every score this produces can be traced back to the exact lexicon terms
- * that were matched, which is what the project brief requires.
- *
- * WHY AN ORIGINAL LEXICON, NOT A REPRODUCTION OF A PUBLISHED ONE: named
- * academic sentiment lexicons (e.g. Hu & Liu, 2004 - see
- * report/references.md [6]) are typically shared for research use, not
- * for verbatim redistribution inside another project. The word lists
- * below are an original compilation, written for this project and scoped
- * specifically to startup/funding news vocabulary - which is also more
- * relevant here than a generic product-review lexicon would be. This
- * connects directly to Loughran & McDonald (2011) [7], who showed that
- * lexicons built for one domain (e.g. general product reviews) routinely
- * misclassify words when applied to financial/business text - exactly
- * the failure mode a domain-specific list is meant to avoid.
- *
- * METHODOLOGY (matches the project brief's worked example exactly):
- *   1. Normalize headline (lowercase)
- *   2. Tokenize (split into words, strip punctuation)
- *   3. Remove stopwords
- *   4. Match remaining tokens against the positive/negative lexicon
- *   5. positive_matches = count of positive-lexicon hits
- *      negative_matches = count of negative-lexicon hits
- *   6. sentiment_score = positive_matches - negative_matches
- *   7. Classify: score > 0 -> Positive, score < 0 -> Negative, else Neutral
- *
- * Demonstrates (syllabus Unit 2): tokenization via map/filter, immutable
- * Set-based lexicon lookup, foldLeft for the core counting logic
- * (explicitly required by the brief), pattern matching for classification,
- * closures in the higher-order function chains.
+ * tokenize -> drop stopwords -> count lexicon hits -> score = pos - neg ->
+ * classify by sign. The word lists are an original compilation scoped to
+ * funding/startup news (generic lexicons misread business text - Loughran &
+ * McDonald 2011). No stemming, so inflections are listed explicitly.
  */
 object SentimentScorer {
 
-  /**
-   * Small, general English stopword list - words carrying no sentiment
-   * themselves, removed before lexicon matching so they can never
-   * accidentally collide with a lexicon term (they don't here, but
-   * removing them keeps token lists shorter and the matching step
-   * cleaner/faster on longer headlines).
-   */
   val Stopwords: Set[String] = Set(
     "a", "an", "the", "of", "in", "on", "for", "to", "and", "or", "is",
     "are", "was", "were", "at", "by", "with", "as", "from", "this",
@@ -53,13 +19,6 @@ object SentimentScorer {
     "after", "into", "over", "up", "down", "out", "amid"
   )
 
-  /**
-   * Original positive-sentiment lexicon, scoped to startup/funding news.
-   * Includes common inflections (raise/raises/raised/raising) since this
-   * is a plain word-list matcher with no stemming - a documented,
-   * deliberate simplicity tradeoff, not an oversight (see
-   * docs/PHASE09_sentiment_scoring.md limitations section).
-   */
   val PositiveTerms: Set[String] = Set(
     "raise", "raises", "raised", "raising", "funding", "funded", "funds",
     "invest", "invests", "invested", "investment", "investors", "backed",
@@ -74,12 +33,9 @@ object SentimentScorer {
     "unicorn", "ipo", "public", "acquired", "acquisition", "acquires",
     "breakthrough", "leading", "leader", "top", "best", "opportunity",
     "opportunities", "positive", "optimistic", "thrive", "thriving",
-    "scale", "scaling", "scaled", "raises", "secures", "secured", "secure"
+    "scale", "scaling", "scaled", "secures", "secured", "secure"
   )
 
-  /**
-   * Original negative-sentiment lexicon, same domain scope.
-   */
   val NegativeTerms: Set[String] = Set(
     "close", "closes", "closed", "closing", "shuts", "shut", "shutdown",
     "shutting", "bankrupt", "bankruptcy", "layoffs", "layoff", "laysoff",
@@ -95,12 +51,9 @@ object SentimentScorer {
     "controversy", "controversial", "criticized", "criticism",
     "criticizes", "trouble", "troubled", "troubling", "crisis", "weak",
     "weakness", "weakening", "disappointing", "disappoints",
-    "disappointed", "down", "downturn", "slump", "slumps", "slumping"
+    "disappointed", "downturn", "slump", "slumps", "slumping"
   )
 
-  /** Lowercases and splits on any run of non-letter characters, dropping
-   * empty tokens - a simple, transparent tokenizer with no external
-   * NLP library dependency. */
   def tokenize(text: String): List[String] =
     text
       .toLowerCase
@@ -111,13 +64,6 @@ object SentimentScorer {
   def removeStopwords(tokens: List[String]): List[String] =
     tokens.filterNot(Stopwords.contains)
 
-  /**
-   * The core scoring step. Uses foldLeft to accumulate (positiveCount,
-   * negativeCount) across the token list in one pass, with pattern
-   * matching selecting which counter to increment for each token -
-   * directly satisfies the brief's requirement to demonstrate fold/reduce
-   * explicitly, not just map/filter.
-   */
   def countSentimentWords(tokens: List[String]): (Int, Int) =
     tokens.foldLeft((0, 0)) { case ((posCount, negCount), token) =>
       token match {
@@ -143,12 +89,6 @@ object SentimentScorer {
       matchedNegativeTerms: List[String]
   )
 
-  /**
-   * Full scoring pipeline for a single headline, also returning WHICH
-   * specific terms matched - this is what makes the scorer explainable:
-   * every score can be justified by name, not just by number, satisfying
-   * the brief's explicit "transparent, explainable" requirement.
-   */
   def scoreHeadline(headline: String): ScoreBreakdown = {
     val tokens = removeStopwords(tokenize(headline))
     val (pos, neg) = countSentimentWords(tokens)
@@ -163,9 +103,6 @@ object SentimentScorer {
     )
   }
 
-  /** Wraps scoreHeadline's result into the Phase 3 ScoredNewsRecord case
-   * class, so this integrates directly with the NewsRecord pipeline from
-   * Phases 7-8 without any adapter code. */
   def scoreNews(news: NewsRecord): ScoredNewsRecord = {
     val breakdown = scoreHeadline(news.headline)
     ScoredNewsRecord(
@@ -177,37 +114,20 @@ object SentimentScorer {
     )
   }
 
+  /** Self-check: the brief's worked example, then real and constructed headlines. */
   def main(args: Array[String]): Unit = {
-    // The project brief's own worked example, verified below.
-    val briefExample = "Startup X raises major funding and expands into new markets"
+    val brief = scoreHeadline("Startup X raises major funding and expands into new markets")
+    println(s"Brief example: $brief")
+    assert(brief.matchedPositiveTerms == List("raises", "funding", "expands") &&
+      brief.sentimentClass == SentimentClass.Positive, "brief's worked example must score Positive")
 
-    // Real headlines captured live from Phase 7/13 (Kabbage, Color Labs, Pinterest).
-    val realHeadlines = List(
-      "Kabbage Raises Some Serious Cabbage for Small-Business Loans - WIRED",
-      "$41 million can't buy success as Color app finally gives up (update: Color denies shutdown) - The Verge",
-      "A Mess Of Family Dynamics Alleged In Lawsuit Against Silicon Valley Entrepreneur And Color Founder Bill Nguyen - Forbes",
-      "Apple to acquire troubled startup Color Labs? - Gadgets 360",
-      "Ben Silbermann On How Pinterest Slowly Grew To Massive Scale - Forbes",
-      "Pinterest, Tumblr and the Trouble With \u2018Curation\u2019 (Published 2012) - The New York Times",
+    val headlines = SampleNews.joinable.map(_._2) ++ List(
       "Startup shuts down after failing to raise sufficient funding, layoffs follow",
       "Company announces bankruptcy amid mounting losses and investor lawsuit"
     )
-
-    println("=== Brief's worked example ===")
-    val r0 = scoreHeadline(briefExample)
-    println("Headline: \"" + briefExample + "\"")
-    println(s"  positive terms matched: ${r0.matchedPositiveTerms}")
-    println(s"  negative terms matched: ${r0.matchedNegativeTerms}")
-    println(s"  score=${r0.sentimentScore}  class=${r0.sentimentClass}")
-    println("  Expected: positive terms = raises, funding, expands; class = Positive\n")
-
-    println("=== Real and constructed test headlines ===")
-    realHeadlines.foreach { h =>
+    headlines.foreach { h =>
       val r = scoreHeadline(h)
-      println(s"[${r.sentimentClass}] score=${r.sentimentScore} (pos=${r.positiveMatches}, neg=${r.negativeMatches})")
-      println(s"  pos terms: ${r.matchedPositiveTerms}")
-      println(s"  neg terms: ${r.matchedNegativeTerms}")
-      println("  \"" + h + "\"\n")
+      println(s"""[${r.sentimentClass}] score=${r.sentimentScore} pos=${r.matchedPositiveTerms} neg=${r.matchedNegativeTerms}\n  "$h"""")
     }
   }
 }

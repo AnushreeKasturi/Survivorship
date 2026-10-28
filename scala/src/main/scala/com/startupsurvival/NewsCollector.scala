@@ -6,48 +6,20 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoField
 import java.util.Locale
 import scala.io.Source
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
+import com.startupsurvival.models.StartupRecord
 
 /**
- * PHASE 7 - News Collection
+ * PHASE 7 - Fetches candidate headlines for a startup from Google News RSS.
  *
- * Fetches candidate news headlines for a startup from Google News RSS.
- *
- * WHY GOOGLE NEWS RSS AND NOT NEWSAPI/GNEWS:
- * Verified in Phase 1 (docs/PHASE01_dataset_analysis.md S1.4): NewsAPI's
- * free tier only retains ~1 month of history and forbids production use;
- * GNews's free tier only reaches back to 2020. Neither can reach our
- * 2013-01-01 cutoff. Google News RSS is free, has no documented request
- * quota for this scale of use, and is the only realistic option - but its
- * ARCHIVAL DEPTH for a specific small startup is not guaranteed and must
- * be checked per-company, which is exactly what the feasibility spike
- * (see docs/PHASE07_news_collection.md) exists to establish honestly.
- *
- * WHY NO XML LIBRARY DEPENDENCY: rather than add scala-xml as a build.sbt
- * dependency for a very small, fixed RSS shape, this file extracts <item>
- * blocks and their <title>/<pubDate>/<link> children directly with
- * targeted regexes. This keeps the build simple (no new dependency to
- * resolve) and is defensible for RSS specifically, which is a much more
- * constrained format than general HTML/XML - but note this is NOT a
- * general-purpose XML parser and would need to be replaced with a real
- * one (scala-xml, or Java's javax.xml) if the input format were less
- * predictable than Google's own RSS output.
- *
- * NOT TESTED AGAINST A LIVE NETWORK CALL FROM THIS DEVELOPMENT ENVIRONMENT
- * - the sandbox used to write and verify this code cannot reach
- * news.google.com. The parsing logic (parseRssItems) IS verified against
- * a captured sample RSS payload (see the ...Test object at the bottom of
- * this file / docs/PHASE07_news_collection.md). The live fetch
- * (fetchUrl + the end-to-end flow) must be verified by running this on a
- * machine with normal internet access - that verification step is your
- * next action after reviewing this file.
+ * NewsAPI/GNews free tiers cannot reach back to 2013, so Google News RSS is
+ * the only free option; its archive depth varies per company (PHASE07 doc).
+ * RSS items are pulled with scoped regexes rather than adding an XML
+ * dependency - fine for Google's fixed RSS shape, not for general XML.
  */
 object NewsCollector {
 
-  private val PredictionCutoff = LocalDate.of(2013, 1, 1)
-
-  /** How far back from the cutoff to request news for - see Phase 2 R4:
-   * only news strictly before the cutoff is feature-eligible. */
+  private val PredictionCutoff = StartupRecord.PredictionCutoff
   private val LookbackMonths = 24
 
   final case class RawNewsItem(
@@ -57,14 +29,7 @@ object NewsCollector {
       source: Option[String]
   )
 
-  /**
-   * Builds a Google News RSS search URL for a company name. Uses Google's
-   * `before:`/`after:` search operators to bias results toward the
-   * pre-cutoff window - this is a best-effort request, not a guarantee;
-   * the feasibility spike must confirm whether Google actually honors
-   * these operators for News results as reliably as it does for plain
-   * web search.
-   */
+  /** `before:`/`after:` are best-effort; collectFor re-filters by date. */
   def buildRssUrl(companyName: String, cutoff: LocalDate = PredictionCutoff): String = {
     val windowStart = cutoff.minusMonths(LookbackMonths)
     val query = s""""$companyName" before:${cutoff} after:${windowStart}"""
@@ -72,11 +37,7 @@ object NewsCollector {
     s"https://news.google.com/rss/search?q=$encoded&hl=en-US&gl=US&ceid=US:en"
   }
 
-  /**
-   * Fetches raw text from a URL with a browser-like User-Agent (Google
-   * has been known to reject Java's default UA string) and a timeout, so
-   * a hung request cannot stall a batch collection run indefinitely.
-   */
+  /** Browser-like UA (Google rejects Java's default) and a timeout so one hung request can't stall a run. */
   def fetchUrl(url: String, timeoutMs: Int = 10000): Try[String] = Try {
     val connection = new URI(url).toURL.openConnection()
     connection.setConnectTimeout(timeoutMs)
@@ -90,15 +51,7 @@ object NewsCollector {
     finally source.close()
   }
 
-  /**
-   * Extracts <item>...</item> blocks from an RSS payload and pulls out
-   * title/link/pubDate/source from each. Uses non-greedy regex matching
-   * scoped to one <item> at a time (never matching across item
-   * boundaries), and strips Google's CDATA wrapping where present.
-   *
-   * Demonstrates: pattern matching via regex extraction, Option handling
-   * for fields that may be absent, immutable List construction via map.
-   */
+  /** Non-greedy matches scoped to one <item>; CDATA wrappers stripped. */
   def parseRssItems(rssXml: String): List[RawNewsItem] = {
     val itemPattern = "(?s)<item>(.*?)</item>".r
     val titlePattern = "(?s)<title>(.*?)</title>".r
@@ -146,23 +99,18 @@ object NewsCollector {
       )
     }.toOption
 
-  /**
-   * End-to-end: fetch + parse + filter to only pre-cutoff items (Phase 2
-   * R4 enforced again here, at collection time - never rely on an
-   * upstream filter alone, matching the same defensive pattern used in
-   * FeatureExtractor's SentimentFeatures aggregation, Phase 10).
-   */
+  /** Fetch, parse, and keep only items published before the cutoff. */
   def collectFor(
       companyName: String,
       cutoff: LocalDate = PredictionCutoff
   ): List[RawNewsItem] = {
     val url = buildRssUrl(companyName, cutoff)
     fetchUrl(url) match {
-      case scala.util.Success(xml) =>
+      case Success(xml) =>
         parseRssItems(xml).filter { item =>
           parsePubDate(item.pubDateRaw).exists(_.isBefore(cutoff))
         }
-      case scala.util.Failure(e) =>
+      case Failure(e) =>
         println(s"  [WARN] fetch failed for '$companyName': ${e.getMessage}")
         Nil
     }
