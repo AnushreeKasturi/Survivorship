@@ -91,7 +91,7 @@ const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance"
             </g>
           ))}
         </svg>
-        <figcaption>Cross-validated AUC, mean ± one standard deviation across five folds. The top four rows use all {population.toLocaleString("en-US")} startups, the rest the {cohortSize}-startup news cohort. Brass marks the original feature set with the leak.</figcaption>
+        <figcaption>Cross-validated AUC, mean ± one standard deviation across five folds. The top four rows use all {population.toLocaleString("en-US")} startups, the rest the {cohortSize}-startup news cohort. Highlighted: the original feature set with the leak.</figcaption>
       </figure>
       <figure class="figure">
         <svg class="chart" viewBox={`0 0 720 ${forestRows.at(-1).y + 44}`} role="img" aria-label="Paired bootstrap differences in AUC with 95% intervals">
@@ -105,7 +105,7 @@ const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance"
             </g>
           ))}
         </svg>
-        <figcaption>Change in AUC when one group of features is added or removed, with 95% intervals from 2,000 paired bootstrap resamples. Brass intervals exclude zero.</figcaption>
+        <figcaption>Change in AUC when one group of features is added or removed, with 95% intervals from 2,000 paired bootstrap resamples. Highlighted intervals exclude zero.</figcaption>
       </figure>
       <figure class="figure">
         <svg class="chart" viewBox={`0 0 720 ${weights.slice(0, 8).length * 30 + 20}`} role="img" aria-label="Largest standardised logistic regression weights">
@@ -118,7 +118,7 @@ const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance"
             </g>
           ))}
         </svg>
-        <figcaption>The largest weights in the news-cohort model, with every feature standardised so their sizes compare. Brass pushes towards closing.</figcaption>
+        <figcaption>The largest weights in the news-cohort model, with every feature standardised so their sizes compare. Highlighted weights push towards closing.</figcaption>
       </figure>
     </details>
   </section>
@@ -169,8 +169,10 @@ const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance"
         <p class="error" role="alert"></p>
       </form>
       <div class="verdict" id="verdict" aria-live="polite">
-        <svg class="ring" viewBox="0 0 200 200" aria-hidden="true"><circle class="bg" cx="100" cy="100" r="90" /><circle class="fg" cx="100" cy="100" r="90" /></svg>
-        <div class="pct"><span>–</span><small>chance it keeps going</small></div>
+        <div class="dial">
+          <svg class="ring" viewBox="0 0 200 200" aria-hidden="true"><circle class="bg" cx="100" cy="100" r="90" /><circle class="fg" cx="100" cy="100" r="90" /></svg>
+          <div class="pct"><span>–</span><small>chance it keeps going</small></div>
+        </div>
         <p class="word">&nbsp;</p>
         <p class="note basis"></p>
         <p class="notice" hidden><b>Older than the model's world.</b> <span></span></p>

@@ -1,5 +1,5 @@
 // The hero's ASCII sky: glyphs on a monospace grid, brightness from slow
-// drifting waves, coloured by the dawn gradient. One glyph in eight is a
+// drifting waves, coloured by the theme's gradient. One glyph in eight is a
 // startup that closed, drawn as a faint "x" (13% of the training data closed).
 
 const RAMP = " .,:;~+*";
@@ -23,10 +23,9 @@ export function sky(canvas) {
     ch = size * 1.25;
     cols = Math.ceil(w / cw);
     rows = Math.ceil(h / ch);
+    const css = getComputedStyle(document.documentElement);
     gradient = ctx.createLinearGradient(0, 0, w, h);
-    gradient.addColorStop(0, "#c98f45");
-    gradient.addColorStop(0.55, "#e3c182");
-    gradient.addColorStop(1, "#9cc2b2");
+    ["--g1", "--g2", "--g3"].forEach((v, i) => gradient.addColorStop(i / 2, css.getPropertyValue(v).trim()));
     let s = 2013;
     seeds = Float32Array.from({ length: cols * rows }, () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32));
   }
@@ -55,7 +54,7 @@ export function sky(canvas) {
   layout();
   let visible = true;
   new IntersectionObserver(([e]) => (visible = e.isIntersecting)).observe(canvas);
-  addEventListener("resize", () => { layout(); draw(performance.now() / 1000); });
+  for (const event of ["resize", "themechange"]) addEventListener(event, () => { layout(); draw(performance.now() / 1000); });
   if (reduced) return draw(0);
   let last = 0;
   (function frame(now) {

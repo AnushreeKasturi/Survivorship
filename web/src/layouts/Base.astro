@@ -16,7 +16,11 @@ const links = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#0d1317" />
+    <meta name="theme-color" content="#f4f6f9" />
+    <script is:inline>
+      // Apply the saved theme before first paint so the page doesn't flash.
+      try { if (localStorage.getItem("theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (e) {}
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -32,11 +36,14 @@ const links = [
         ))}
       </nav>
       <a class="live" href="/startups/#watchlist" data-live hidden><span class="pulse" aria-hidden="true"></span><span data-live-text>Watchlist</span></a>
+      <button class="theme" type="button" aria-label="Dark theme" aria-pressed="false" data-theme-toggle>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="moon" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /><g class="sun"><circle cx="12" cy="12" r="4.2" /><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" /></g></svg>
+      </button>
     </header>
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
       <defs>
         <linearGradient id="dawn" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#c98f45" /><stop offset="0.55" stop-color="#e3c182" /><stop offset="1" stop-color="#9cc2b2" />
+          <stop offset="0" style="stop-color: var(--g1)" /><stop offset="0.5" style="stop-color: var(--g2)" /><stop offset="1" style="stop-color: var(--g3)" />
         </linearGradient>
       </defs>
     </svg>
