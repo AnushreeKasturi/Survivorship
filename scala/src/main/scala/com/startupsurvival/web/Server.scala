@@ -153,8 +153,13 @@ object Server {
     val modelsPath = sys.env.getOrElse("MODEL_COEFFICIENTS", "../results/model_coefficients.json")
     val models = parse(new String(Files.readAllBytes(Paths.get(modelsPath)), UTF_8)).extract[Models]
 
-    // ponytail: JDK HttpServer on its default single thread - fine for a demo, add an executor if it ever takes real traffic.
-    val server = HttpServer.create(new InetSocketAddress(port), 0)
+    // Slow clients are cut off after 10s and can't starve the pool. Set before the server class loads.
+    System.setProperty("sun.net.httpserver.maxReqTime", "10")
+    System.setProperty("sun.net.httpserver.maxRspTime", "10")
+    // Loopback unless HOST says otherwise (e.g. HOST=0.0.0.0 when deploying).
+    val host = sys.env.getOrElse("HOST", "127.0.0.1")
+    val server = HttpServer.create(new InetSocketAddress(host, port), 0)
+    server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(8))
     api(server, "/api/predict")(body => predict(parse(body).extract[PredictRequest], models))
     api(server, "/api/sentiment")(body => sentiment(parse(body).extract[SentimentRequest].headline))
     api(server, "/api/match") { body =>
@@ -163,6 +168,6 @@ object Server {
     }
     server.createContext("/", (ex: HttpExchange) => serveStatic(siteRoot)(ex))
     server.start()
-    println(s"Serving $siteRoot and /api on http://localhost:$port")
+    println(s"Serving $siteRoot and /api on http://$host:$port")
   }
 }

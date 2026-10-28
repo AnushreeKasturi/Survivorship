@@ -70,7 +70,7 @@ LR weights from `results/model_coefficients.json`. Results are baked in from
 ```bash
 cd web && npm ci && npm run build       # Node 22.12+
 cd ../scala && sbt "runMain com.startupsurvival.web.Server"
-# http://localhost:8080   (PORT, SITE_DIR, MODEL_COEFFICIENTS env vars override defaults)
+# http://localhost:8080   (HOST, PORT, SITE_DIR, MODEL_COEFFICIENTS env vars override defaults)
 ```
 
 For front-end work, run `npm run dev` in `web/` with the Scala server still
