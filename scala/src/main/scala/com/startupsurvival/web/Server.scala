@@ -124,9 +124,9 @@ object Server {
   private def sendJson(ex: HttpExchange, status: Int, value: AnyRef): Unit =
     send(ex, status, "application/json", write(value).getBytes(UTF_8))
 
-  /** Behind Render's proxy the client is the first X-Forwarded-For hop. */
+  /** The last X-Forwarded-For hop is the one Render's proxy appended; earlier hops are client-supplied. */
   private def client(ex: HttpExchange): String =
-    Option(ex.getRequestHeaders.getFirst("X-Forwarded-For")).map(_.split(',').head.trim)
+    Option(ex.getRequestHeaders.getFirst("X-Forwarded-For")).map(_.split(',').last.trim)
       .getOrElse(ex.getRemoteAddress.getAddress.getHostAddress)
 
   /** JSON endpoint for one method; bad input becomes a 400 with a message. */

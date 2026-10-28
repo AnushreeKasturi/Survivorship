@@ -39,8 +39,11 @@ object Tracker {
 
   private val NamePattern = """^[\p{L}\p{N} .&'+-]{2,60}$""".r
 
-  def validate(p: Profile): Unit =
+  def validate(p: Profile): Unit = {
     require(NamePattern.findFirstIn(p.name.trim).isDefined, "name must be 2-60 letters, digits, spaces or .&'+-")
+    require(p.country.forall(_.matches("[A-Za-z]{0,3}")), "country must be a 3-letter code")
+    require(p.categories.length <= 10 && p.categories.forall(c => c.length <= 40 && !c.contains('|')), "at most 10 categories of 40 characters")
+  }
 
   def loadProfiles(path: String): List[Profile] =
     parse(new String(Files.readAllBytes(Paths.get(path)), UTF_8)).extract[List[Profile]]
@@ -96,15 +99,16 @@ object Tracker {
     @volatile private var running = false
     private val MaxVisitors = 25
     private val SubmitGapMs = 20000L
+    private val GlobalGapMs = 3000L // across all clients, in case client identity is spoofed
+    @volatile private var lastAnySubmit = 0L
 
     private def key(name: String) = NameMatcher.normalize(name)
 
-    private def runOne(p: Profile, timeoutMs: Int): Map[String, Any] = {
-      val r = Try(check(p, LocalDate.now(), models, timeoutMs))
+    private def score(p: Profile, timeoutMs: Int): Map[String, Any] =
+      Try(check(p, LocalDate.now(), models, timeoutMs))
         .getOrElse(Map("profile" -> p, "error" -> "could not score this profile"))
-      results.put(key(p.name), r)
-      r
-    }
+
+    private def runOne(p: Profile, timeoutMs: Int): Unit = results.put(key(p.name), score(p, timeoutMs))
 
     def refresh(): Unit = {
       running = true
@@ -133,16 +137,21 @@ object Tracker {
     def track(p: Profile, client: String): Map[String, Any] = {
       validate(p)
       val now = System.currentTimeMillis()
-      val last = Option(lastSubmit.put(client, now)).map(_.longValue).getOrElse(0L)
+      lastSubmit.entrySet.removeIf(_.getValue < now - SubmitGapMs) // keeps the map to recent clients only
+      val last = Option(lastSubmit.put(client.take(64), now)).map(_.longValue).getOrElse(0L)
       require(now - last > SubmitGapMs, "one startup every 20 seconds, please try again shortly")
+      synchronized {
+        require(now - lastAnySubmit > GlobalGapMs, "the server is busy scoring another startup, please try again in a few seconds")
+        lastAnySubmit = now
+      }
       val profile = p.copy(name = p.name.trim, outcome = None, outcomeDate = None, note = None, sources = Nil)
       val k = key(profile.name)
       require(curated.forall(c => key(c.name) != k), s"${profile.name} is already on the watchlist")
-      val result = runOne(profile, 4000) // under the server's 10s response limit
-      if (!result.contains("error") && visitors.put(k, profile) == null) {
-        visitorOrder.add(k)
-        while (visitors.size > MaxVisitors) Option(visitorOrder.poll()).foreach { o => visitors.remove(o); results.remove(o) }
-      }
+      // Bad dates throw here and reach the visitor as a 400; news failures are recorded in the result.
+      val result = check(profile, LocalDate.now(), models, 4000) // under the server's 10s response limit
+      if (visitors.put(k, profile) == null) visitorOrder.add(k)
+      results.put(k, result)
+      while (visitors.size > MaxVisitors) Option(visitorOrder.poll()).foreach { o => visitors.remove(o); results.remove(o) }
       result
     }
   }
