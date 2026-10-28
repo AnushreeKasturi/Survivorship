@@ -114,7 +114,8 @@ object FeatureSets {
   def safeCoverage(v: Vocab)(cf: CombinedFeatures): Array[Double] = safe(v)(cf) ++ coverageArray(cf.sentiment)
   def safeSentiment(v: Vocab)(cf: CombinedFeatures): Array[Double] = safeCoverage(v)(cf) ++ toneArray(cf.sentiment)
 
-  private val Schema = StructType(Seq(
+  // Lazy so the web server, which only needs the arrays, never loads Spark SQL.
+  private lazy val Schema = StructType(Seq(
     StructField("permalink", StringType, nullable = false),
     StructField("label", DoubleType, nullable = false),
     StructField("features", SQLDataTypes.VectorType, nullable = false)

@@ -31,4 +31,5 @@ COPY results/model_coefficients_leakfree.json .
 ENV HOST=0.0.0.0 PORT=8080 SITE_DIR=/app/site MODEL_COEFFICIENTS=/app/model_coefficients_leakfree.json
 USER 65534
 EXPOSE 8080
-CMD ["java", "-XX:MaxRAMPercentage=75", "-cp", "lib/*", "com.startupsurvival.web.Server"]
+# Serial GC and C1-only JIT: faster cold starts on a fractional-CPU free instance.
+CMD ["java", "-XX:MaxRAMPercentage=75", "-XX:+UseSerialGC", "-XX:TieredStopAtLevel=1", "-cp", "lib/*", "com.startupsurvival.web.Server"]

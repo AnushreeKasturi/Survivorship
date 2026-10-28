@@ -169,6 +169,10 @@ object Server {
     val siteRoot = Paths.get(sys.env.getOrElse("SITE_DIR", "../web/dist")).toAbsolutePath.normalize()
     val modelsPath = sys.env.getOrElse("MODEL_COEFFICIENTS", "../results/model_coefficients_leakfree.json")
     val models = loadModels(modelsPath)
+    // Warm up before taking traffic: on a 0.1-CPU host the first cold request otherwise outlasts the 10s timeout.
+    write(predict(PredictRequest("2020-01-01", "2020-06-01", Some(List("Software")), Some("USA"),
+      Some(List(Headline("2020-07-01", "Acme raises funding")))), models))
+    NameMatcher.computeMatchConfidence("Acme Labs", "Acme Labs raises funding")
 
     // Slow clients are cut off after 10s and can't starve the pool. Set before the server class loads.
     System.setProperty("sun.net.httpserver.maxReqTime", "10")
