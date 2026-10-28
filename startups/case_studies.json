@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Quibi", "foundedAt": "2018-08-01", "firstFundingAt": "2018-08-01",
+    "categories": ["Video"], "country": "USA",
+    "outcome": "closed", "outcomeDate": "2020-10-21",
+    "note": "Founded as NewTV in August 2018 with a $1B first round. Shutdown announced October 21, 2020.",
+    "sources": ["https://en.wikipedia.org/wiki/Quibi", "https://news.crunchbase.com/startups/quibi-shutting-down/"]
+  },
+  {
+    "name": "Juicero", "foundedAt": "2013-07-01", "firstFundingAt": "2013-07-01",
+    "categories": ["Hardware + Software"], "country": "USA",
+    "outcome": "closed", "outcomeDate": "2017-09-01",
+    "note": "Founded and first funded in 2013 (month not public). Announced it was shutting down on September 1, 2017.",
+    "sources": ["https://techcrunch.com/2017/09/01/rip-juicero-the-400-venture-backed-juice-machine/", "https://www.failory.com/cemetery/juicero"]
+  },
+  {
+    "name": "Fast", "foundedAt": "2019-07-01", "firstFundingAt": "2020-03-01",
+    "categories": ["Finance"], "country": "USA",
+    "outcome": "closed", "outcomeDate": "2022-04-05",
+    "note": "One-click checkout, founded 2019. Earliest reported round is the Stripe-led Series A in March 2020. Shut down April 5, 2022.",
+    "sources": ["https://www.wfae.org/2022-04-05/fast-the-easy-checkout-startup-shuts-down-after-burning-through-investors-money", "https://www.fintechfutures.com/fintech/stripe-backed-one-click-checkout-fintech-fast-folds"]
+  },
+  {
+    "name": "Convoy", "foundedAt": "2015-07-01", "firstFundingAt": "2015-07-01",
+    "categories": ["Logistics"], "country": "USA",
+    "outcome": "closed", "outcomeDate": "2023-10-19",
+    "note": "Digital freight broker founded and first backed by angels in 2015. Shut down operations October 19, 2023.",
+    "sources": ["https://fortune.com/2023/10/19/convoy-trucking-tech-startup-shuts-down-jeff-bezos-investor", "https://www.bloomberg.com/news/articles/2023-10-19/bezos-backed-startup-convoy-closes-operations-with-no-buyer"]
+  },
+  {
+    "name": "Airbnb", "foundedAt": "2008-08-01", "firstFundingAt": "2009-01-01",
+    "categories": ["E-Commerce"], "country": "USA",
+    "outcome": "operating", "outcomeDate": "2020-12-10",
+    "note": "Founded August 2008; Y Combinator in January 2009, Sequoia seed in April 2009. Public since December 2020.",
+    "sources": ["https://en.wikipedia.org/wiki/Airbnb"]
+  },
+  {
+    "name": "Stripe", "foundedAt": "2010-07-01", "firstFundingAt": "2010-07-01",
+    "categories": ["Finance"], "country": "USA",
+    "outcome": "operating",
+    "note": "Founded 2010 as /dev/payments with Y Combinator seed money that year (month disputed). Still private and operating.",
+    "sources": ["https://vator.tv/2016-12-29-when-stripe-was-young-the-early-years/", "https://www.startupgrind.com/blog/the-collison-brothers-and-story-behind-the-founding-of-stripe"]
+  },
+  {
+    "name": "Figma", "foundedAt": "2012-07-01", "firstFundingAt": "2013-07-01",
+    "categories": ["Software"], "country": "USA",
+    "outcome": "operating", "outcomeDate": "2025-07-31",
+    "note": "Founded 2012; Index Ventures led the 2013 seed. Listed on the NYSE July 31, 2025.",
+    "sources": ["https://www.fortune.com/2025/07/01/figma-ipo-s-1-after-20-billion-adobe-deal-abandoned-dylan-field", "https://www.bloomberg.com/news/articles/2025-07-30/figma-said-expected-to-price-ipo-above-range-at-33-per-share"]
+  },
+  {
+    "name": "Duolingo", "foundedAt": "2011-07-01", "firstFundingAt": "2011-10-01",
+    "categories": ["Education"], "country": "USA",
+    "outcome": "operating", "outcomeDate": "2021-07-28",
+    "note": "Founded 2011; $3.3M Series A led by Union Square Ventures in October 2011. Nasdaq IPO July 28, 2021.",
+    "sources": ["https://en.wikipedia.org/wiki/Duolingo"]
+  }
+]

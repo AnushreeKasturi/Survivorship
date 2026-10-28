@@ -1,0 +1,100 @@
+---
+import Base from "../layouts/Base.astro";
+import { caseStudies, model } from "../lib/data.js";
+
+const cases = caseStudies.cases;
+const hits = cases.filter((c) => c.correct).length;
+const withNews = cases.filter((c) => c.financialSentiment != null);
+const newsHits = withNews.filter((c) => (c.financialSentiment >= 0.5) === (c.profile.outcome === "operating")).length;
+const closed = cases.filter((c) => c.profile.outcome === "closed").length;
+---
+
+<Base title="Startups · Startup Survival" description="Real startups scored by the pipeline: eight with known endings, a live watchlist re-checked every six hours, and your own." page="startups">
+  <section style="padding-top: 160px">
+    <h1 class="display title">Real startups, real endings</h1>
+    <p class="lede">
+      We picked {closed} startups that shut down and {cases.length - closed} that made it, checked their dates against public sources,
+      and asked the pipeline about each one as of a date when its fate was still open.
+    </p>
+    <div class="verdicts">
+      <div>
+        <span class="num">{hits} of {cases.length}</span>
+        <p>called right by the structural model, which uses age, time since first funding, category and country.</p>
+      </div>
+      <div>
+        <span class="num">{newsHits} of {withNews.length}</span>
+        <p>called right by the news model, for the startups whose name actually matched headlines.</p>
+      </div>
+      <div>
+        <span class="num">0.68</span>
+        <p>is the model's cross-validated AUC. Famous companies are outliers, so a near coin-flip on eight of them is what that number predicts.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="rule" id="cases-section">
+    <h2 class="display h2">Eight known endings</h2>
+    <p class="lede narrow">
+      Each startup is scored two years after its first funding round, or six months before it shut down if that came sooner,
+      using only news from the two years before that date. The marker shows the structural model; the small red marker is the news model.
+      Dates known only to the year are set to 1 July.
+    </p>
+    <ol class="ledger" id="cases"></ol>
+    <script type="application/json" id="case-data" set:html={JSON.stringify(cases)}></script>
+  </section>
+
+  <section class="rule" id="watchlist">
+    <h2 class="display h2">The live watchlist</h2>
+    <p class="lede narrow">
+      Well-known startups whose story is still being written. A scheduler on the server pulls their last two years of Google News,
+      matches and scores it, and re-runs both models every six hours.
+    </p>
+    <p class="note narrow">
+      Read these as the model's view, not a forecast. It lowers a startup's score the longer it has been since its first
+      round, and every startup it learned from was judged within a few years of that round, so mature companies like
+      Stripe score low by extrapolation. Names that are ordinary words, like Ramp or Notion, get no news signal.
+    </p>
+    <p class="status" id="watch-status" aria-live="polite">Loading the latest check.</p>
+    <p class="offline" hidden>The watchlist and the form below need the Scala server. From <code>scala/</code>, run <code>sbt "runMain com.startupsurvival.web.Server"</code> and open <code>localhost:8080/startups/</code>.</p>
+    <ol class="ledger" id="watch-curated"></ol>
+
+    <h3 class="display h3" style="margin-top: 96px">Added by visitors</h3>
+    <ol class="ledger" id="watch-visitors"></ol>
+  </section>
+
+  <section class="rule" id="add">
+    <h2 class="display h2">Add your startup</h2>
+    <p class="lede narrow">
+      It runs through the same pipeline straight away and joins the visitor list, which the scheduler re-checks with everything else.
+      The list is kept in memory, so it resets when the server restarts.
+    </p>
+    <form class="tool" id="track-form" style="padding-left: 0; padding-right: 0; max-width: 880px">
+      <div class="cols">
+        <div>
+          <label for="t-name">Company name</label>
+          <input id="t-name" name="name" required minlength="2" maxlength="60" placeholder="As it appears in the press" />
+          <label for="t-founded">Founded</label>
+          <input id="t-founded" name="foundedAt" type="date" required />
+          <label for="t-first">First funding round</label>
+          <input id="t-first" name="firstFundingAt" type="date" required />
+        </div>
+        <div>
+          <label for="t-country">Country</label>
+          <select id="t-country" name="country">
+            {model.countries.map((c) => <option selected={c === "USA"}>{c}</option>)}
+            <option value="">other</option>
+          </select>
+          <label for="t-cats">Categories (ctrl or ⌘-click for several)</label>
+          <select id="t-cats" name="categories" multiple size="6">
+            {model.categories.map((c) => <option>{c}</option>)}
+            <option value="other">other</option>
+          </select>
+        </div>
+      </div>
+      <button>Score and track</button>
+      <p class="error" role="alert"></p>
+    </form>
+  </section>
+
+  <script>import "../scripts/startups.js";</script>
+</Base>

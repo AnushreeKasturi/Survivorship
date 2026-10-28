@@ -15,7 +15,8 @@ import com.startupsurvival.spark.FeatureSets
 /**
  * Serves the Astro site (web/dist) and a JSON API backed by the real
  * pipeline code - the sentiment scorer, name matcher, feature extractors and
- * the leak-free LR models from results/model_coefficients_leakfree.json.
+ * the leak-free LR models from results/model_coefficients_leakfree.json -
+ * plus the scheduled watchlist in Tracker.
  *
  *   sbt "runMain com.startupsurvival.web.Server"   # from scala/, after `npm run build` in web/
  */
@@ -70,16 +71,15 @@ object Server {
   }
 
   /**
-   * A live prediction uses today as the cutoff: the same feature code as
+   * Live predictions use today as the cutoff: the same feature code as
    * training, just "as of now" instead of 2013-01-01. Only the leak-free
    * inputs are asked for, so no lifetime funding totals.
    */
-  def predict(req: PredictRequest, models: Models): Map[String, Any] = {
-    val cutoff = LocalDate.now()
+  def predict(req: PredictRequest, models: Models, cutoff: LocalDate = LocalDate.now()): Map[String, Any] = {
     val founded = date("foundedAt", req.foundedAt)
     val firstFunding = date("firstFundingAt", req.firstFundingAt)
-    require(founded.isBefore(cutoff), "foundedAt must be in the past")
-    require(!firstFunding.isBefore(founded) && firstFunding.isBefore(cutoff), "firstFundingAt must be between foundedAt and today")
+    require(founded.isBefore(cutoff), s"foundedAt must be before $cutoff")
+    require(!firstFunding.isBefore(founded) && firstFunding.isBefore(cutoff), s"firstFundingAt must be between foundedAt and $cutoff")
     val categories = req.categories.getOrElse(Nil).map(_.trim).filter(_.nonEmpty)
     require(categories.length <= 50 && categories.forall(c => c.length <= 100 && !c.contains('|')), "invalid categories")
     val headlines = req.headlines.getOrElse(Nil).filter(_.text.trim.nonEmpty)
@@ -124,11 +124,17 @@ object Server {
   private def sendJson(ex: HttpExchange, status: Int, value: AnyRef): Unit =
     send(ex, status, "application/json", write(value).getBytes(UTF_8))
 
-  /** POST-only JSON endpoint; bad input becomes a 400 with a message. */
-  private def api(server: HttpServer, path: String)(handle: String => AnyRef): Unit =
+  /** Behind Render's proxy the client is the first X-Forwarded-For hop. */
+  private def client(ex: HttpExchange): String =
+    Option(ex.getRequestHeaders.getFirst("X-Forwarded-For")).map(_.split(',').head.trim)
+      .getOrElse(ex.getRemoteAddress.getAddress.getHostAddress)
+
+  /** JSON endpoint for one method; bad input becomes a 400 with a message. */
+  private def api(server: HttpServer, path: String, method: String = "POST")(handle: (HttpExchange, String) => AnyRef): Unit =
     server.createContext(path, (ex: HttpExchange) =>
       try {
-        if (ex.getRequestMethod != "POST") sendJson(ex, 405, Map("error" -> "POST only"))
+        if (ex.getRequestMethod != method) sendJson(ex, 405, Map("error" -> s"$method only"))
+        else if (method == "GET") sendJson(ex, 200, handle(ex, ""))
         else {
           // Bounded read (Java 8 has no readNBytes); stops once the limit is passed.
           val body = new java.io.ByteArrayOutputStream()
@@ -137,7 +143,7 @@ object Server {
             .takeWhile(n => n != -1 && body.size <= MaxBodyBytes)
             .foreach(body.write(chunk, 0, _))
           if (body.size > MaxBodyBytes) sendJson(ex, 413, Map("error" -> "request too large"))
-          else sendJson(ex, 200, handle(body.toString(UTF_8.name)))
+          else sendJson(ex, 200, handle(ex, body.toString(UTF_8.name)))
         }
       } catch {
         case e @ (_: IllegalArgumentException | _: org.json4s.MappingException | _: com.fasterxml.jackson.core.JsonProcessingException) =>
@@ -181,14 +187,18 @@ object Server {
     val host = sys.env.getOrElse("HOST", "127.0.0.1")
     val server = HttpServer.create(new InetSocketAddress(host, port), 0)
     server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(8))
-    api(server, "/api/predict")(body => predict(parse(body).extract[PredictRequest], models))
-    api(server, "/api/sentiment")(body => sentiment(parse(body).extract[SentimentRequest].headline))
-    api(server, "/api/match") { body =>
+    val watch = new Tracker.Watch(models, Tracker.loadProfiles(sys.env.getOrElse("WATCHLIST", "../startups/watchlist.json")))
+    api(server, "/api/predict")((_, body) => predict(parse(body).extract[PredictRequest], models))
+    api(server, "/api/sentiment")((_, body) => sentiment(parse(body).extract[SentimentRequest].headline))
+    api(server, "/api/watchlist", "GET")((_, _) => watch.snapshot)
+    api(server, "/api/track")((ex, body) => watch.track(parse(body).extract[Tracker.Profile], client(ex)))
+    api(server, "/api/match") { (_, body) =>
       val req = parse(body).extract[MatchRequest]
       NameMatcher.computeMatchConfidence(req.name, req.headline)
     }
     server.createContext("/", (ex: HttpExchange) => serveStatic(siteRoot)(ex))
     server.start()
+    watch.start()
     println(s"Serving $siteRoot and /api on http://$host:$port")
   }
 }

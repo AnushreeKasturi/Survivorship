@@ -1,0 +1,44 @@
+---
+import "../styles/global.css";
+
+const { title, description, page } = Astro.props;
+const links = [
+  ["/", "Overview", "home"],
+  ["/how-it-works/", "How it works", "how"],
+  ["/startups/", "Startups", "startups"],
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  </head>
+  <body data-page={page}>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="nav">
+      <a class="wordmark" href="/">Survival</a>
+      <nav aria-label="Pages">
+        {links.map(([href, label, key]) => (
+          <a href={href} aria-current={key === page ? "page" : undefined}>{label}</a>
+        ))}
+      </nav>
+      <a class="live" href="/startups/#watchlist" data-live hidden><span class="pulse" aria-hidden="true"></span><span data-live-text>Watchlist</span></a>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="foot">
+      <p>A Big Data end-semester project in Scala and Apache Spark. Every number on this site is read from <code>results/</code> at build time or computed live by the Scala server.</p>
+      <p>Data: Crunchbase snapshot via Kaggle (CDLA-Sharing 1.0). Source on <a href="https://github.com/AnushreeKasturi/bda_endsem">GitHub</a>.</p>
+    </footer>
+    <script>import "../scripts/live.js";</script>
+  </body>
+</html>

@@ -148,4 +148,13 @@ class ModelingSpec extends AnyFunSuite {
     assert(p > 0 && p < 1)
     assert(r("financialSentiment").asInstanceOf[Option[Double]].exists(x => x > 0 && x < 1))
   }
+
+  test("case studies are scored two years after first funding, or six months before closing") {
+    import com.startupsurvival.web.Tracker.{Profile, caseStudyAsOf, validate}
+    val quibi = Profile("Quibi", "2018-08-01", "2018-08-01", List("Video"), Some("USA"), Some("closed"), Some("2020-10-21"))
+    assert(caseStudyAsOf(quibi) == LocalDate.of(2020, 4, 21))
+    assert(caseStudyAsOf(quibi.copy(outcome = Some("operating"))) == LocalDate.of(2020, 8, 1))
+    validate(quibi)
+    assertThrows[IllegalArgumentException](validate(quibi.copy(name = "<script>")))
+  }
 }
