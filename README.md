@@ -1,5 +1,13 @@
 # Evaluating the Predictive Value of Public News Sentiment for Startup Survival
 
+[![CI](https://img.shields.io/github/actions/workflow/status/AnushreeKasturi/bda_endsem/scala.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/AnushreeKasturi/bda_endsem/actions/workflows/scala.yml)
+[![Watchlist refresh](https://img.shields.io/github/actions/workflow/status/AnushreeKasturi/bda_endsem/watchlist.yml?branch=main&label=watchlist&logo=githubactions&logoColor=white)](https://github.com/AnushreeKasturi/bda_endsem/actions/workflows/watchlist.yml)
+[![Live demo](https://img.shields.io/badge/live%20demo-onrender.com-3b55e6?logo=render&logoColor=white)](https://startup-survival-demo.onrender.com)
+[![License: MIT](https://img.shields.io/badge/license-MIT-0f9e92)](LICENSE)
+[![Scala 2.12](https://img.shields.io/badge/Scala-2.12.18-DC322F?logo=scala&logoColor=white)](scala/build.sbt)
+[![Spark 3.5](https://img.shields.io/badge/Apache%20Spark-3.5.1-E25A1C?logo=apachespark&logoColor=white)](scala/build.sbt)
+[![Astro](https://img.shields.io/badge/Astro-7-BC52EE?logo=astro&logoColor=white)](web/package.json)
+
 **Using Scala and Apache Spark**
 
 B.Tech CSE — End-Semester Big Data Project
@@ -29,6 +37,23 @@ Reported per experiment: Accuracy, Precision, Recall, F1, and a confusion
 matrix (TP/TN/FP/FN). **All results come from actual execution — nothing in
 this repository may contain fabricated numbers.**
 
+That single-split design (Phase 18) was then replaced as the headline
+evaluation by **stratified 5-fold cross-validation with paired bootstrap
+intervals** (Phase 18b), after a leak was found in one financial feature.
+
+## Findings
+
+From `results/cv_summary.csv` and `results/significance.csv` (logistic regression):
+
+| Question | Result |
+|---|---|
+| Does the original financial set leak post-cutoff information? | Yes: removing it costs 0.044 AUC (95% CI −0.054 to −0.034) |
+| How well do leak-free structural features alone do? | AUC 0.679 on all 22,075 startups |
+| Does the *volume* of news help? | No: +0.001 AUC (CI −0.010 to +0.012) |
+| Does the *tone* of news help? | A little: +0.010 AUC (CI +0.000 to +0.021, p = 0.047), not significant after multiple-comparison correction |
+
+Details in `report/results.md` and `docs/PHASE18b_cross_validated_experiments.md`.
+
 ## Technology stack
 
 | Layer | Technology | Purpose |
@@ -39,6 +64,8 @@ this repository may contain fabricated numbers.**
 | Distributed compute | Apache Spark (RDD API) | Key/value RDDs, joins, aggregation, persistence |
 | ML | Spark MLlib | Logistic Regression, Binary SVM |
 | Support | Python (pandas) | One-off EDA and plotting only |
+| Web demo | Astro, GSAP, JDK `HttpServer` + json4s | Live site and JSON API over the same Scala code |
+| Hosting | Docker on Render, Render Key Value | Public demo; visitor-added startups |
 
 Versions are pinned in Phase 5. Python is confined to exploration and
 visualisation; the graded pipeline is Scala + Spark.
@@ -118,7 +145,9 @@ running; `/api` is proxied to port 8080.
 The `Dockerfile` builds the site and the server into one image
 (`docker build -t demo . && docker run -p 8080:8080 demo`). On Render, choose
 New → Blueprint and select this repo; `render.yaml` sets up a free Docker web
-service. Free instances sleep when idle, so the first visit can take ~30 s.
+service and asks for an optional `KV_URL`. Free instances sleep when idle, so
+the first visit can take ~30 s; the watchlist workflow wakes it every six hours.
+Merges to `main` deploy automatically.
 
 ## Running the pipeline
 
@@ -167,7 +196,7 @@ python scripts/inspect_dataset.py data/raw/big_startup_secsees_dataset.csv \
 
 The chosen dataset is a Crunchbase snapshot from around **October 2013**,
 while collectable news is current. Naively pairing the two would introduce
-**twelve years of future information** into the features — catastrophic data
+**more than a decade of future information** into the features — catastrophic data
 leakage that would invalidate every result.
 
 The project therefore adopts a **retrospective cutoff design**: prediction
@@ -184,7 +213,7 @@ the fallback plan are in `docs/PHASE01_dataset_analysis.md` §1.4–1.5.
 | 1 | Data engineering — dataset, HDFS, Hive, ingestion |
 | 2 | Scala functional processing — cleaning, matching, sentiment, features |
 | 3 | Spark + MLlib — RDDs, joins, feature vectors, LR, SVM |
-| 4 | Evaluation, visualisation, dashboard, report, presentation |
+| 4 | Evaluation, visualisation, web demo, report, presentation |
 
 ## Working rule
 
@@ -196,3 +225,9 @@ previous one demonstrably works. Track state in `docs/PHASE_PROGRESS.md`.
 Primary dataset: *Startup Success/Fail Dataset from Crunchbase* (Kaggle, user
 `yanmaksi`), published under the Community Data License Agreement – Sharing
 v1.0. Raw data is not redistributed in this repository.
+
+## License
+
+The code is released under the [MIT License](LICENSE). The dataset keeps its
+own CDLA-Sharing 1.0 licence (see above), and the bundled fonts (Instrument
+Serif, Geist, Geist Mono, via Fontsource) are under the SIL Open Font License.

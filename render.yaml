@@ -4,3 +4,7 @@ services:
     runtime: docker
     plan: free
     healthCheckPath: /
+    envVars:
+      # Optional: a redis:// URL (e.g. a Render Key Value internal URL) to keep visitor startups across restarts.
+      - key: KV_URL
+        sync: false
