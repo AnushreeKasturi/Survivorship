@@ -76,6 +76,13 @@ cd ../scala && sbt "runMain com.startupsurvival.web.Server"
 For front-end work, run `npm run dev` in `web/` with the Scala server still
 running; `/api` is proxied to port 8080.
 
+### Deploying to Render
+
+The `Dockerfile` builds the site and the server into one image
+(`docker build -t demo . && docker run -p 8080:8080 demo`). On Render, choose
+New → Blueprint and select this repo; `render.yaml` sets up a free Docker web
+service. Free instances sleep when idle, so the first visit can take ~30 s.
+
 ## Running the pipeline
 
 Every Spark entry point reads from HDFS by default and accepts an alternative

@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: startup-survival-demo
+    runtime: docker
+    plan: free
+    healthCheckPath: /
