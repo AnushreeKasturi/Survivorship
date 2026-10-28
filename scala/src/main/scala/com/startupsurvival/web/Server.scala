@@ -15,7 +15,8 @@ import com.startupsurvival.spark.FeatureSets
 /**
  * Serves the Astro site (web/dist) and a JSON API backed by the real
  * pipeline code - the sentiment scorer, name matcher, feature extractors and
- * the leak-free LR models from results/model_coefficients_leakfree.json.
+ * the leak-free LR models from results/model_coefficients_leakfree.json -
+ * plus the scheduled watchlist in Tracker.
  *
  *   sbt "runMain com.startupsurvival.web.Server"   # from scala/, after `npm run build` in web/
  */
@@ -40,6 +41,33 @@ object Server {
       require(financialSentiment.features.map(_.name) == safe ++ FeatureSets.CoverageFeatureNames ++ FeatureSets.ToneFeatureNames,
         "financialSentiment features do not match FeatureSets")
     }
+  }
+
+  /**
+   * When to warn that a company is older than the model's world. The model's
+   * weight on years since first funding is negative, so its score keeps
+   * falling with age; past these bounds that says more about age than survival.
+   */
+  final case class Maturity(olderAfter: Double, establishedAfter: Double, source: String) {
+    def describe(years: Double): Map[String, Any] = Map(
+      "yearsSinceFirstFunding" -> years,
+      "level" -> (if (years >= establishedAfter) "established" else if (years >= olderAfter) "older" else "young"),
+      "olderAfter" -> olderAfter,
+      "establishedAfter" -> establishedAfter,
+      "source" -> source
+    )
+  }
+  object Maturity {
+    val Design = Maturity(5, 10, "design rule: 5 and 10 years after the first round")
+
+    /** The 90th and 99th percentiles from results/feature_ranges.json when spark.FeatureRanges has been run. */
+    def load(path: String): Maturity =
+      scala.util.Try {
+        val ranges = parse(new String(Files.readAllBytes(Paths.get(path)), UTF_8)) \ "yearsSinceFirstFunding"
+        val p90 = (ranges \ "p90").extract[Double]
+        val p99 = (ranges \ "p99").extract[Double]
+        Maturity(p90, p99, f"training data: 90%% of startups were within $p90%.1f years of their first round, 99%% within $p99%.1f")
+      }.getOrElse(Design)
   }
 
   final case class Headline(date: String, text: String)
@@ -70,16 +98,15 @@ object Server {
   }
 
   /**
-   * A live prediction uses today as the cutoff: the same feature code as
+   * Live predictions use today as the cutoff: the same feature code as
    * training, just "as of now" instead of 2013-01-01. Only the leak-free
    * inputs are asked for, so no lifetime funding totals.
    */
-  def predict(req: PredictRequest, models: Models): Map[String, Any] = {
-    val cutoff = LocalDate.now()
+  def predict(req: PredictRequest, models: Models, cutoff: LocalDate = LocalDate.now(), bounds: Maturity = Maturity.Design): Map[String, Any] = {
     val founded = date("foundedAt", req.foundedAt)
     val firstFunding = date("firstFundingAt", req.firstFundingAt)
-    require(founded.isBefore(cutoff), "foundedAt must be in the past")
-    require(!firstFunding.isBefore(founded) && firstFunding.isBefore(cutoff), "firstFundingAt must be between foundedAt and today")
+    require(founded.isBefore(cutoff), s"foundedAt must be before $cutoff")
+    require(!firstFunding.isBefore(founded) && firstFunding.isBefore(cutoff), s"firstFundingAt must be between foundedAt and $cutoff")
     val categories = req.categories.getOrElse(Nil).map(_.trim).filter(_.nonEmpty)
     require(categories.length <= 50 && categories.forall(c => c.length <= 100 && !c.contains('|')), "invalid categories")
     val headlines = req.headlines.getOrElse(Nil).filter(_.text.trim.nonEmpty)
@@ -103,6 +130,7 @@ object Server {
       "financialOnly" -> models.financialOnly.probability(safe),
       "financialSentiment" -> (if (scored.isEmpty) None else Some(models.financialSentiment.probability(withNews))),
       "financial" -> financial,
+      "maturity" -> bounds.describe(financial.yearsSinceFirstFunding),
       "sentiment" -> sentimentFeatures,
       "headlines" -> headlines.map(h => sentiment(h.text) + ("text" -> h.text) + ("date" -> h.date))
     )
@@ -124,11 +152,17 @@ object Server {
   private def sendJson(ex: HttpExchange, status: Int, value: AnyRef): Unit =
     send(ex, status, "application/json", write(value).getBytes(UTF_8))
 
-  /** POST-only JSON endpoint; bad input becomes a 400 with a message. */
-  private def api(server: HttpServer, path: String)(handle: String => AnyRef): Unit =
+  /** The last X-Forwarded-For hop is the one Render's proxy appended; earlier hops are client-supplied. */
+  private def client(ex: HttpExchange): String =
+    Option(ex.getRequestHeaders.getFirst("X-Forwarded-For")).map(_.split(',').last.trim)
+      .getOrElse(ex.getRemoteAddress.getAddress.getHostAddress)
+
+  /** JSON endpoint for one method; bad input becomes a 400 with a message. */
+  private def api(server: HttpServer, path: String, method: String = "POST")(handle: (HttpExchange, String) => AnyRef): Unit =
     server.createContext(path, (ex: HttpExchange) =>
       try {
-        if (ex.getRequestMethod != "POST") sendJson(ex, 405, Map("error" -> "POST only"))
+        if (ex.getRequestMethod != method) sendJson(ex, 405, Map("error" -> s"$method only"))
+        else if (method == "GET") sendJson(ex, 200, handle(ex, ""))
         else {
           // Bounded read (Java 8 has no readNBytes); stops once the limit is passed.
           val body = new java.io.ByteArrayOutputStream()
@@ -137,7 +171,7 @@ object Server {
             .takeWhile(n => n != -1 && body.size <= MaxBodyBytes)
             .foreach(body.write(chunk, 0, _))
           if (body.size > MaxBodyBytes) sendJson(ex, 413, Map("error" -> "request too large"))
-          else sendJson(ex, 200, handle(body.toString(UTF_8.name)))
+          else sendJson(ex, 200, handle(ex, body.toString(UTF_8.name)))
         }
       } catch {
         case e @ (_: IllegalArgumentException | _: org.json4s.MappingException | _: com.fasterxml.jackson.core.JsonProcessingException) =>
@@ -181,14 +215,20 @@ object Server {
     val host = sys.env.getOrElse("HOST", "127.0.0.1")
     val server = HttpServer.create(new InetSocketAddress(host, port), 0)
     server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(8))
-    api(server, "/api/predict")(body => predict(parse(body).extract[PredictRequest], models))
-    api(server, "/api/sentiment")(body => sentiment(parse(body).extract[SentimentRequest].headline))
-    api(server, "/api/match") { body =>
+    val bounds = Maturity.load(sys.env.getOrElse("FEATURE_RANGES", "../results/feature_ranges.json"))
+    val store = sys.env.get("KV_URL").filter(_.nonEmpty).map(new Store(_))
+    val watch = new Tracker.Watch(models, Tracker.loadProfiles(sys.env.getOrElse("WATCHLIST", "../startups/watchlist.json")), bounds, store)
+    api(server, "/api/predict")((_, body) => predict(parse(body).extract[PredictRequest], models, LocalDate.now(), bounds))
+    api(server, "/api/sentiment")((_, body) => sentiment(parse(body).extract[SentimentRequest].headline))
+    api(server, "/api/watchlist", "GET")((_, _) => watch.snapshot)
+    api(server, "/api/track")((ex, body) => watch.track(parse(body).extract[Tracker.Profile], client(ex)))
+    api(server, "/api/match") { (_, body) =>
       val req = parse(body).extract[MatchRequest]
       NameMatcher.computeMatchConfidence(req.name, req.headline)
     }
     server.createContext("/", (ex: HttpExchange) => serveStatic(siteRoot)(ex))
     server.start()
+    watch.start()
     println(s"Serving $siteRoot and /api on http://$host:$port")
   }
 }

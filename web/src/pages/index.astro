@@ -1,230 +1,212 @@
 ---
-import fs from "node:fs";
-import path from "node:path";
-import "../styles/global.css";
+import Base from "../layouts/Base.astro";
+import { cv, significance, weights, model, cohortSize, population, closedCount, signed, shortModel } from "../lib/data.js";
 
-// Baked in at build time from the pipeline's own output - never hand-edited.
-const results = path.resolve(process.cwd(), "../results");
-const read = (file) => fs.readFileSync(path.join(results, file), "utf8");
-const csv = (file) => {
-  const [header, ...lines] = read(file).trim().split("\n");
-  const cols = header.split(",");
-  return lines.map((line) => Object.fromEntries(line.split(",").map((v, i) => [cols[i], isNaN(+v) ? v : +v])));
+// ASCII pipeline: five boxes, padded to one width so they line up.
+const W = 18;
+const box = (a, b) => {
+  const pad = (s) => " " + s.padEnd(W - 1);
+  return `╭${"─".repeat(W)}╮\n│${pad(a)}│\n│${pad(b)}│\n╰${"─".repeat(W)}╯`;
 };
-const cv = csv("cv_summary.csv");
-const sig = csv("significance.csv");
-const weights = csv("cohort_lr_coefficients.csv").slice(0, 8);
-const model = JSON.parse(read("model_coefficients_leakfree.json"));
-
-const signed = (x, digits = 3) => (x >= 0 ? "+" : "−") + Math.abs(x).toFixed(digits);
-const short = { "Logistic Regression": "LR", "Linear SVM": "SVM" };
-const label = (r) => `${short[r.model]} · ${r.feature_set.replace("Financial ", "").replace(/[()]/g, "").replace("Leak-free + ", "+ ").toLowerCase()}`;
-const delta = (a, b) => sig.find((s) => s.model === "Logistic Regression" && s.feature_set_a === a && s.feature_set_b === b);
-const cohortSize = cv.find((r) => r.population === "cohort").n;
-
-const groups = [
-  ["Leakage check", `All ${cv[0].n.toLocaleString("en-US")} startups`, cv.filter((r) => r.population === "full")],
-  ["Does news help?", `Balanced news cohort, ${cohortSize} startups`, cv.filter((r) => r.population === "cohort")],
-];
-const lifts = [
-  ["Removing leaky features", delta("Financial (original)", "Financial (leak-free)")],
-  ["+ news volume", delta("Leak-free", "Leak-free + Coverage")],
-  ["+ news tone", delta("Leak-free + Coverage", "Leak-free + Sentiment")],
+const flow = [
+  [box(`${population.toLocaleString("en-US")} startups`, "before 2013"), "Crunchbase records land in HDFS and Hive."],
+  [box("2 years of news", "per startup"), "Google News headlines from before the cutoff."],
+  [box("is it them?", "name matching"), "Headlines that never name the company are dropped."],
+  [box("+  0  −", "tone of voice"), "A small lexicon scores each headline."],
+  [box("will it last?", "Spark MLlib"), "Weighted logistic regression, tested with 5-fold CV."],
 ];
 
-const stages = [
-  ["HDFS", "Storage", "hadoop/hdfs_commands.md", "22,075 eligible startups land in HDFS after Phase 2's labelling and cutoff rules."],
-  ["Hive", "Warehouse", "hive/schema.sql", "A structured table for SQL exploration, with a quote-aware SerDe after a real comma bug."],
-  ["News collection", "Scala", "BatchNewsCollector.scala", "Resumable Google News collection for a balanced 815-startup cohort, pre-2013 headlines only."],
-  ["DataCleaner", "Scala", "DataCleaner.scala", "A quote-aware CSV fold turns each row into an immutable StartupRecord, or drops it."],
-  ["NameMatcher", "Scala", "NameMatcher.scala", "Rejects headlines that never name the company, like Kabbage's “tomato barons” false hit."],
-  ["SentimentScorer", "Scala", "SentimentScorer.scala", "Lexicon scoring with explainable term hits. Score = positive hits − negative hits."],
-  ["Feature extraction", "Scala", "FeatureExtractor.scala", "Only what was known at the cutoff: age, time since first funding, category, country, plus sentiment aggregates."],
-  ["RDD join", "Spark", "spark/FeatureJoin.scala", "leftOuterJoin keeps every startup; no coverage means a zero sentiment baseline."],
-  ["MLlib", "Spark", "ml/ExperimentRunner.scala", "Weighted logistic regression and linear SVM, stratified 5-fold CV, paired bootstrap intervals."],
-];
+const lrDelta = (a, b) => significance.find((s) => s.model === "Logistic Regression" && s.feature_set_a === a && s.feature_set_b === b);
+const tone = lrDelta("Leak-free + Coverage", "Leak-free + Sentiment");
+const volume = lrDelta("Leak-free", "Leak-free + Coverage");
+const leakFree = cv.find((r) => r.population === "full" && r.feature_set === "Financial (leak-free)" && r.model === "Logistic Regression");
+
+// Charts for "see the numbers".
+const auc = { lo: 0.55, hi: 0.76, x0: 210, x1: 700 };
+const ax = (v) => auc.x0 + ((v - auc.lo) / (auc.hi - auc.lo)) * (auc.x1 - auc.x0);
+const aucRows = cv.map((r, i) => ({ ...r, y: 24 + i * 30 + (r.population === "cohort" ? 24 : 0) }));
+const leaky = (r) => r.population === "full" && r.feature_set.includes("original");
+const nice = (s) => s.replace("Financial ", "").replace(/[()]/g, "").replace("Leak-free + ", "+ ").toLowerCase();
+const forest = { lo: -0.06, hi: 0.03, x0: 290, x1: 700 };
+const fx = (v) => forest.x0 + ((v - forest.lo) / (forest.hi - forest.lo)) * (forest.x1 - forest.x0);
+const forestRows = significance.map((s, i) => ({ ...s, y: 24 + i * 30, label: `${shortModel[s.model]}: ${nice(s.feature_set_a)} → ${nice(s.feature_set_b)}` }));
+const excludesZero = (r) => r.ci_high < 0 || r.ci_low > 0;
+
+const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance", "Health Care", "Education", "Games"];
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Startup Survival</title>
-    <meta name="description" content="Does public news sentiment improve startup survival prediction? A Scala + Spark pipeline, live." />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <nav class="nav">
-      <span class="mark">● survival</span>
-      <a href="#pipeline">pipeline</a>
-      <a href="#lab">lab</a>
-      <a href="#results">results</a>
-    </nav>
-
-    <header class="hero">
-      <p class="eyebrow">Big Data end-semester · Scala + Apache Spark</p>
-      <h1 class="reveal-words">Can the news tell which startups <em>die</em>?</h1>
+<Base title="Startup Survival" description="Can the news tell which startups will survive? A Scala and Spark pipeline, live." page="home">
+  <section class="hero">
+    <canvas class="sky" aria-hidden="true"></canvas>
+    <div>
+      <h1 class="h1">Can the news tell which startups <span class="glow">will survive?</span></h1>
       <p class="lede">
-        We trained classifiers on 22,075 Crunchbase startups, then collected pre-2013 news for a balanced cohort
-        of {cohortSize}, to see whether headlines add anything to what was known at the cutoff.
+        We followed {population.toLocaleString("en-US")} startups past 1 January 2013 and asked whether the headlines written
+        about them beforehand knew something their funding history didn't.
       </p>
-      <dl class="stats">
-        <div><dt>startups</dt><dd data-count="22075">22,075</dd></div>
-        <div><dt>cutoff</dt><dd>2013‑01‑01</dd></div>
-        <div><dt>news cohort</dt><dd data-count={cohortSize}>{cohortSize}</dd></div>
-        <div><dt>closed</dt><dd>13%</dd></div>
-      </dl>
-      <span class="scroll-cue" aria-hidden="true">scroll</span>
-    </header>
-
-    <section id="pipeline" class="pipeline">
-      <div class="section-head">
-        <p class="eyebrow">01 · pipeline</p>
-        <h2>From a CSV to a verdict</h2>
+      <div class="actions">
+        <a class="btn" href="#score">Score a startup</a>
+        <a class="btn ghost" href="/startups/">Meet real startups</a>
       </div>
-      <div class="track-wrap">
-        <ol class="track">
-          {stages.map(([name, tech, file, text], i) => (
-            <li class="stage">
-              <span class="stage-n">{String(i + 1).padStart(2, "0")}</span>
-              <span class="stage-tech">{tech}</span>
-              <h3>{name}</h3>
-              <p>{text}</p>
-              <code>{file}</code>
-            </li>
+    </div>
+    <p class="caption" aria-hidden="true">x marks the {((closedCount / population) * 100).toFixed(0)}% of startups that closed</p>
+  </section>
+
+  <section id="answer">
+    <div class="head center">
+      <h2 class="h2">The short answer</h2>
+      <p class="lede">A modest yes for what the news says, a firm no for how much of it there is.</p>
+    </div>
+    <div class="findings">
+      <div class="finding">
+        <span class="n glow">{leakFree.auc_mean.toFixed(2)}</span>
+        <p><b>Structure alone ranks startups better than chance.</b> Age, funding timing, sector and country reach an AUC of {leakFree.auc_mean.toFixed(2)}, after we removed a field that quietly leaked the future.</p>
+      </div>
+      <div class="finding">
+        <span class="n glow">{signed(volume.delta_auc, 2)}</span>
+        <p><b>How much news a startup gets adds nothing.</b> Coverage volume changed the score by {signed(volume.delta_auc)} AUC, well inside the noise.</p>
+      </div>
+      <div class="finding">
+        <span class="n glow">{signed(tone.delta_auc, 2)}</span>
+        <p><b>What the news says helps, a little.</b> Headline tone added {signed(tone.delta_auc)} AUC on a {cohortSize}-startup sample. Borderline, and not significant after correcting for multiple tests.</p>
+      </div>
+    </div>
+
+    <details class="more">
+      <summary>See the numbers</summary>
+      <figure class="figure">
+        <svg class="chart" viewBox={`0 0 720 ${aucRows.at(-1).y + 44}`} role="img" aria-label="Cross-validated AUC for each feature set and model">
+          {[0.55, 0.6, 0.65, 0.7, 0.75].map((t) => (
+            <g>
+              <line class="axis" x1={ax(t)} x2={ax(t)} y1="8" y2={aucRows.at(-1).y + 16} />
+              <text x={ax(t)} y={aucRows.at(-1).y + 34} text-anchor="middle">{t.toFixed(2)}</text>
+            </g>
           ))}
-        </ol>
-      </div>
-    </section>
-
-    <section id="lab" class="lab">
-      <div class="section-head">
-        <p class="eyebrow">02 · lab</p>
-        <h2>Run the real code</h2>
-        <p class="sub">Every panel below calls the Scala pipeline through <code>web/Server.scala</code>. Nothing is re-implemented in JavaScript.</p>
-      </div>
-      <p class="offline" hidden>The live lab needs the Scala server. From <code>scala/</code>, run <code>sbt "runMain com.startupsurvival.web.Server"</code> and open <code>localhost:8080</code>.</p>
-
-      <div class="panels">
-        <form class="panel" id="sentiment-form">
-          <h3>Sentiment scorer</h3>
-          <label for="s-headline">Headline</label>
-          <input id="s-headline" name="headline" value="Startup X raises major funding and expands into new markets" maxlength="300" required />
-          <button>Score</button>
-          <div class="out" aria-live="polite">
-            <p class="tokens" id="s-tokens"></p>
-            <p class="big"><span id="s-score">–</span> <small id="s-class"></small></p>
-          </div>
-        </form>
-
-        <form class="panel" id="match-form">
-          <h3>Name matcher</h3>
-          <label for="m-name">Company</label>
-          <input id="m-name" name="name" value="Kabbage" maxlength="100" required />
-          <label for="m-headline">Headline</label>
-          <input id="m-headline" name="headline" value="The tomato barons of the occupied Western Sahara" maxlength="300" required />
-          <button>Match</button>
-          <div class="out" aria-live="polite">
-            <div class="meter"><span id="m-bar"></span></div>
-            <p class="big"><span id="m-confidence">–</span> <small id="m-reason"></small></p>
-          </div>
-        </form>
-
-        <form class="panel wide" id="predict-form">
-          <h3>Survival predictor</h3>
-          <div class="grid">
-            <div>
-              <label for="p-founded">Founded</label>
-              <input id="p-founded" name="foundedAt" type="date" value="2021-03-01" required />
-              <label for="p-first">First funding round</label>
-              <input id="p-first" name="firstFundingAt" type="date" value="2022-06-01" required />
-              <label for="p-country">Country</label>
-              <select id="p-country" name="country">
-                {model.countries.map((c) => <option selected={c === "USA"}>{c}</option>)}
-                <option value="">other</option>
-              </select>
-              <label for="p-cats">Categories (ctrl/⌘-click for several)</label>
-              <select id="p-cats" name="categories" multiple size="5">
-                {model.categories.map((c) => <option selected={c === "Software"}>{c}</option>)}
-                <option value="other">other</option>
-              </select>
-            </div>
-            <div>
-              <label for="p-news">News, one per line as <code>YYYY-MM-DD: headline</code></label>
-              <textarea id="p-news" name="headlines" rows="7" placeholder="2024-06-02: Acme raises Series A to expand into Europe&#10;2025-02-11: Acme faces lawsuit over delayed shipments"></textarea>
-            </div>
-          </div>
-          <button>Predict</button>
-          <div class="out verdict" aria-live="polite">
-            <div><span class="label">Financial only</span><span class="big" id="p-fin">–</span></div>
-            <div><span class="label">Financial + sentiment</span><span class="big" id="p-sent">–</span></div>
-          </div>
-          <p class="note">Probability of still operating, from the leak-free logistic regression models (cross-validated AUC ≈ 0.68 without news). Treat the news score with caution: its tone weights come from only 69 cohort startups that had matched news, so a few mixed headlines can swing it to an extreme. Read both as signals, not verdicts.</p>
-          <p class="error" id="p-error"></p>
-        </form>
-      </div>
-    </section>
-
-    <section id="results" class="results">
-      <div class="section-head">
-        <p class="eyebrow">03 · results</p>
-        <h2>Five folds, paired bootstrap</h2>
-        <p class="sub">Stratified 5-fold cross-validation; every model sees the same folds. Bars show AUC above chance (0.5).</p>
-      </div>
-
-      <div class="experiments">
-        {groups.map(([title, sub, rows], i) => (
-          <article class="exp">
-            <header>
-              <span class="exp-n">{String(i + 1).padStart(2, "0")}</span>
-              <h3>{title}</h3>
-              <p>{sub}</p>
-            </header>
-            {rows.map((r) => (
-              <div class="bar-row">
-                <span>{label(r)}</span>
-                <div class="bar"><span style={`--w:${(r.auc_mean - 0.5) * 2}`}></span></div>
-                <b>{r.auc_mean.toFixed(3)}</b>
-              </div>
-            ))}
-          </article>
-        ))}
-      </div>
-
-      <div class="answer">
-        <p class="eyebrow">the answer · ΔAUC, logistic regression</p>
-        <div class="lifts">
-          {lifts.map(([name, d]) => (
-            <div>
-              <span class="label">{name}</span>
-              <span class="huge">{signed(d.delta_auc)}</span>
-              <span class="ci">95% CI [{signed(d.ci_low)}, {signed(d.ci_high)}] · p {d.p_value === 0 ? "< 0.001" : `= ${d.p_value.toFixed(3)}`}</span>
-            </div>
+          {aucRows.map((r) => (
+            <g>
+              <text class="lbl" x="0" y={r.y + 5}>{shortModel[r.model]}, {nice(r.feature_set)}</text>
+              <line class={`ci ${leaky(r) ? "hl" : ""}`} x1={ax(r.auc_mean - r.auc_sd)} x2={ax(r.auc_mean + r.auc_sd)} y1={r.y} y2={r.y} />
+              <circle class={`pt ${leaky(r) ? "hl" : ""}`} cx={ax(r.auc_mean)} cy={r.y} r="5" />
+              <text x={ax(r.auc_mean + r.auc_sd) + 8} y={r.y + 4}>{r.auc_mean.toFixed(3)}</text>
+            </g>
           ))}
+        </svg>
+        <figcaption>Cross-validated AUC, mean ± one standard deviation across five folds. The top four rows use all {population.toLocaleString("en-US")} startups, the rest the {cohortSize}-startup news cohort. Peach marks the original feature set with the leak.</figcaption>
+      </figure>
+      <figure class="figure">
+        <svg class="chart" viewBox={`0 0 720 ${forestRows.at(-1).y + 44}`} role="img" aria-label="Paired bootstrap differences in AUC with 95% intervals">
+          <line class="zero" x1={fx(0)} x2={fx(0)} y1="8" y2={forestRows.at(-1).y + 16} />
+          {[-0.05, -0.025, 0, 0.025].map((t) => <text x={fx(t)} y={forestRows.at(-1).y + 34} text-anchor="middle">{signed(t, 3)}</text>)}
+          {forestRows.map((r) => (
+            <g>
+              <text class="lbl" x="0" y={r.y + 5}>{r.label}</text>
+              <line class={`ci ${excludesZero(r) ? "hl" : ""}`} x1={fx(r.ci_low)} x2={fx(r.ci_high)} y1={r.y} y2={r.y} />
+              <circle class={`pt ${excludesZero(r) ? "hl" : ""}`} cx={fx(r.delta_auc)} cy={r.y} r="5" />
+            </g>
+          ))}
+        </svg>
+        <figcaption>Change in AUC when one group of features is added or removed, with 95% intervals from 2,000 paired bootstrap resamples. Peach intervals exclude zero.</figcaption>
+      </figure>
+      <figure class="figure">
+        <svg class="chart" viewBox={`0 0 720 ${weights.slice(0, 8).length * 30 + 20}`} role="img" aria-label="Largest standardised logistic regression weights">
+          <line class="zero" x1="470" x2="470" y1="0" y2={weights.slice(0, 8).length * 30 + 4} />
+          {weights.slice(0, 8).map((w, i) => (
+            <g>
+              <text class="lbl" x="0" y={i * 30 + 20}>{w.feature}</text>
+              <line class={`ci ${w.standardised_coefficient < 0 ? "hl" : ""}`} x1="470" x2={470 + w.standardised_coefficient * 400} y1={i * 30 + 15} y2={i * 30 + 15} style="stroke-width: 8" />
+              <text x={w.standardised_coefficient < 0 ? 470 + w.standardised_coefficient * 400 - 8 : 470 + w.standardised_coefficient * 400 + 8} y={i * 30 + 19} text-anchor={w.standardised_coefficient < 0 ? "end" : "start"}>{signed(w.standardised_coefficient, 2)}</text>
+            </g>
+          ))}
+        </svg>
+        <figcaption>The largest weights in the news-cohort model, with every feature standardised so their sizes compare. Peach pushes towards closing.</figcaption>
+      </figure>
+    </details>
+  </section>
+
+  <section id="score">
+    <div class="head center">
+      <h2 class="h2">Score a startup</h2>
+      <p class="lede">Three details are enough. The real Scala model answers, with today as its cutoff.</p>
+    </div>
+    <p class="offline center" hidden>Scoring needs the Scala server. From <code>scala/</code>, run <code>sbt "runMain com.startupsurvival.web.Server"</code> and open <code>localhost:8080</code>.</p>
+    <div class="card predictor">
+      <form id="predict-form">
+        <div class="fields">
+          <div class="field">
+            <label for="p-founded">Founded</label>
+            <input id="p-founded" name="foundedAt" type="date" value="2021-03-01" required />
+          </div>
+          <div class="field">
+            <label for="p-first">First funding round</label>
+            <input id="p-first" name="firstFundingAt" type="date" value="2022-06-01" required />
+          </div>
+          <div class="field full">
+            <label for="p-country">Country</label>
+            <select id="p-country" name="country">
+              {model.countries.map((c) => <option selected={c === "USA"}>{c}</option>)}
+              <option value="">Somewhere else</option>
+            </select>
+          </div>
+          <fieldset class="chips full">
+            <legend>What does it do?</legend>
+            {featured.map((c) => <label class="chip"><input type="checkbox" name="categories" value={c} checked={c === "Software"} /><span>{c}</span></label>)}
+          </fieldset>
+          <details class="inline full">
+            <summary>More categories</summary>
+            <div class="chips">
+              {model.categories.filter((c) => !featured.includes(c)).map((c) => <label class="chip"><input type="checkbox" name="categories" value={c} /><span>{c}</span></label>)}
+            </div>
+          </details>
+          <details class="inline full">
+            <summary>Add headlines (optional)</summary>
+            <div class="field">
+              <label for="p-news">One per line, as <code>2024-06-02: Acme raises a Series A</code></label>
+              <textarea id="p-news" name="headlines" rows="4"></textarea>
+            </div>
+          </details>
         </div>
-        <p>
-          One financial flag leaked post-cutoff events; without it, structural features still reach AUC 0.68.
-          How much news a startup had added nothing. What the news said added about 0.01 AUC: borderline,
-          and not significant after correcting for multiple comparisons.
-        </p>
-        <h3>Largest standardised weights (LR, cohort, leak-free + sentiment)</h3>
-        <ul class="weights">
-          {weights.map((w) => (
-            <li><code>{w.feature}</code><span class={w.standardised_coefficient < 0 ? "neg" : "pos"}>{signed(w.standardised_coefficient)}</span></li>
-          ))}
-        </ul>
+        <div class="actions" style="justify-content: flex-start; margin-top: 28px"><button>Score it</button></div>
+        <p class="error" role="alert"></p>
+      </form>
+      <div class="verdict" id="verdict" aria-live="polite">
+        <svg class="ring" viewBox="0 0 200 200" aria-hidden="true"><circle class="bg" cx="100" cy="100" r="90" /><circle class="fg" cx="100" cy="100" r="90" /></svg>
+        <div class="pct"><span>–</span><small>chance it keeps going</small></div>
+        <p class="word">&nbsp;</p>
+        <p class="note basis"></p>
+        <p class="notice" hidden><b>Older than the model's world.</b> <span></span></p>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <footer class="foot">
-      <p>Run it yourself: <code>cd web && npm run build</code>, then <code>cd scala && sbt "runMain com.startupsurvival.web.Server"</code>.</p>
-      <p>Data: Crunchbase snapshot via Kaggle (CDLA-Sharing 1.0). Every number on this page comes from <code>results/</code>.</p>
-    </footer>
+  <section id="flow">
+    <div class="head center">
+      <h2 class="h2">How a startup becomes a score</h2>
+    </div>
+    <div class="flow" aria-label="Pipeline: startups, news, name matching, tone scoring, model">
+      {flow.map(([text], i) => (
+        <>
+          {i > 0 && <span class="arrow" aria-hidden="true">──▶</span>}
+          <pre class="box">{text}</pre>
+        </>
+      ))}
+    </div>
+    <div class="flow-notes">
+      {flow.map(([, note]) => <p>{note}</p>)}
+    </div>
+  </section>
 
-    <script>import "../scripts/app.js";</script>
-  </body>
-</html>
+  <section style="padding-top: 40px">
+    <div class="links">
+      <a href="/startups/">
+        <strong>Real startups</strong>
+        <span>Eight companies with known endings, a watchlist re-checked every six hours, and room for yours.</span>
+      </a>
+      <a href="/how-it-works/">
+        <strong>How it works</strong>
+        <span>The cutoff, the leak, the news matching and the honest testing, one step at a time.</span>
+      </a>
+    </div>
+  </section>
+
+  <script>import "../scripts/home.js";</script>
+</Base>

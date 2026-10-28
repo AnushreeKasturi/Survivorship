@@ -1,0 +1,14 @@
+name: Watchlist refresh
+
+# The free Render instance sleeps when idle and its in-process scheduler sleeps with it.
+# Waking it every six hours starts a fresh watchlist check (it runs on every start).
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  wake:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS --retry 5 --retry-delay 30 --retry-all-errors --max-time 120 -o /dev/null https://startup-survival-demo.onrender.com/api/watchlist

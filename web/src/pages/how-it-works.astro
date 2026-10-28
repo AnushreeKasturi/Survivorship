@@ -1,0 +1,182 @@
+---
+import Base from "../layouts/Base.astro";
+import { population, closedCount, cohortSize, model } from "../lib/data.js";
+
+const steps = [
+  ["question", "The question"],
+  ["cutoff", "One date splits past from future"],
+  ["leakage", "The leak we found"],
+  ["news", "Collecting the news"],
+  ["matching", "Is this headline about them?"],
+  ["scoring", "Reading the tone"],
+  ["features", "From headlines to features"],
+  ["models", "The models"],
+  ["evaluation", "Testing it honestly"],
+  ["platform", "The live platform"],
+  ["limits", "What it can't do"],
+];
+
+const timeline = `founded ──── first round ──── ░░░░ 2 years of news ░░░░ ┃ cutoff ┃ ──── outcome
+                                                          ┃        ┃
+                     everything left of the line is evidence, right of it the answer`;
+---
+
+<Base title="How it works · Survival" description="How the startup survival pipeline works, from the 2013 cutoff to the live watchlist." page="how">
+  <section style="padding-bottom: 20px">
+    <div class="head center" style="margin: 0 auto">
+      <h1 class="h1">How it works</h1>
+      <p class="lede">A distributed pipeline in Scala and Apache Spark, trained on a Crunchbase snapshot and served live by a small Scala server. One step at a time.</p>
+    </div>
+  </section>
+
+  <section class="longform" style="padding-top: 40px">
+    <ol class="toc" aria-label="Steps">
+      {steps.map(([id, label]) => <li><a href={`#${id}`}>{label}</a></li>)}
+    </ol>
+
+    <div>
+      <article class="step" id="question">
+        <h2>The question</h2>
+        <p>
+          Investors read the news. Does what the press says about a young company tell you anything about whether it survives,
+          beyond what its age, funding history, sector and country already tell you? Everything here exists to answer that one
+          question without fooling ourselves.
+        </p>
+      </article>
+
+      <article class="step" id="cutoff">
+        <h2>One date splits past from future</h2>
+        <p>
+          Every startup is judged as of <strong>1 January 2013</strong>. Features may only use what was knowable before then; the
+          label is what happened after. Of the {population.toLocaleString("en-US")} startups founded and funded before the cutoff,
+          {" "}{closedCount.toLocaleString("en-US")} ({((closedCount / population) * 100).toFixed(1)}%) had closed by the 2014 snapshot.
+          Acquired companies are left out, because an acquisition is neither a clean success nor a failure.
+        </p>
+        <pre class="formula" aria-label="Timeline: founded, first round, two years of news, cutoff, outcome">{timeline}</pre>
+      </article>
+
+      <article class="step" id="leakage">
+        <h2>The leak we found</h2>
+        <p>
+          Crunchbase's funding totals are lifetime figures from 2014, so they include rounds raised after the cutoff. Our first
+          version only used totals when the last round came before 2013, and recorded whether that guard passed as a flag. The flag
+          itself leaked: it was false almost exactly when a company raised again after 2013, which means it was still alive.
+        </p>
+        <p>
+          Removing everything that depends on lifetime funding cost 0.044 AUC. The leak-free model keeps only facts fixed before
+          the cutoff: age, years since the first round, the gap from founding to that round, the top {model.categories.length}
+          {" "}categories and the top {model.countries.length} countries.
+        </p>
+      </article>
+
+      <article class="step" id="news">
+        <h2>Collecting the news</h2>
+        <p>
+          Free news APIs don't reach back to 2011, so <code>BatchNewsCollector</code> queries Google News RSS with a date window
+          for each company. It is resumable, gentle with rate limits, and works through a balanced cohort of {cohortSize} startups,
+          half that closed and half that didn't, so coverage can't simply track survival. Raw headlines are stored before matching,
+          so the matcher can change without collecting again.
+        </p>
+      </article>
+
+      <article class="step" id="matching">
+        <h2>Is this headline about them?</h2>
+        <p>
+          A search for "Kabbage" returns an article about tomato barons. <code>NameMatcher</code> normalises both texts, drops
+          suffixes like Inc and Ltd, and gives each headline a confidence. Only 0.6 and above is used.
+        </p>
+        <ul>
+          <li><strong>1.0</strong> when the full name appears and at least one of its words is distinctive.</li>
+          <li><strong>0.6</strong> when every word of the name is an everyday word, like "Wireless Tech".</li>
+          <li><strong>0.3</strong> when the name is one short or everyday word, like Ramp or Notion, so it is set aside.</li>
+        </ul>
+        <form class="card try" id="match-try">
+          <div class="row-inputs">
+            <div class="field"><label for="m-name">Company</label><input id="m-name" name="name" value="Kabbage" maxlength="60" required /></div>
+            <span></span>
+          </div>
+          <div class="row-inputs" style="margin-top: 12px">
+            <div class="field"><label for="m-headline">Headline</label><input id="m-headline" name="headline" value="The tomato barons of the occupied Western Sahara" maxlength="300" required /></div>
+            <button>Check</button>
+          </div>
+          <p class="result" aria-live="polite"></p>
+          <p class="error" role="alert"></p>
+        </form>
+        <p>
+          A hand audit of 100 accepted headlines found 29 strictly about the company and 38 about its product. Matching is the
+          weakest link in the pipeline.
+        </p>
+      </article>
+
+      <article class="step" id="scoring">
+        <h2>Reading the tone</h2>
+        <p><code>SentimentScorer</code> uses a small finance-and-startup lexicon, so every score can be explained word by word.</p>
+        <pre class="formula">score = positive words − negative words</pre>
+        <form class="card try" id="tone-try">
+          <div class="row-inputs">
+            <div class="field"><label for="s-headline">Headline</label><input id="s-headline" name="headline" value="Startup X raises major funding and expands into new markets" maxlength="300" required /></div>
+            <button>Score</button>
+          </div>
+          <p class="result tokens" aria-live="polite"></p>
+          <p class="error" role="alert"></p>
+        </form>
+        <p>There is no negation handling, so "can't buy success" still counts as positive.</p>
+      </article>
+
+      <article class="step" id="features">
+        <h2>From headlines to features</h2>
+        <p>Spark groups each startup's scored headlines and computes, from news before the cutoff only:</p>
+        <ul>
+          <li>Coverage: how many headlines there were, and whether there were any.</li>
+          <li>Tone: shares of positive, negative and neutral headlines, the average, the most recent, the trend from older to newer, and how much it swings.</li>
+        </ul>
+        <p>A <code>leftOuterJoin</code> keeps every startup, so a company nobody wrote about gets a neutral baseline instead of vanishing.</p>
+      </article>
+
+      <article class="step" id="models">
+        <h2>The models</h2>
+        <p>
+          Spark MLlib logistic regression and a linear SVM. Only 13% of startups closed, so an unweighted model learns to say
+          "operating" for everyone. Balanced class weights, computed from training rows only, make both outcomes count equally.
+        </p>
+        <pre class="formula">weight(class) = rows ÷ (2 × rows in that class)
+P(keeps going) = 1 ÷ (1 + e^−(b + w·x))</pre>
+      </article>
+
+      <article class="step" id="evaluation">
+        <h2>Testing it honestly</h2>
+        <ul>
+          <li>Stratified five-fold cross-validation, with the same folds for every model, so comparisons are paired.</li>
+          <li>Decision thresholds are tuned inside each training fold, never on the fold being tested.</li>
+          <li>A paired bootstrap with 2,000 resamples puts a 95% interval on every difference.</li>
+          <li>Feature sets are nested (leak-free, then plus coverage, then plus tone), so each step isolates one idea.</li>
+        </ul>
+        <p>News volume adds nothing; news tone adds about 0.01 AUC, which doesn't survive a correction for multiple tests. <a href="/#answer">See the numbers.</a></p>
+      </article>
+
+      <article class="step" id="platform">
+        <h2>The live platform</h2>
+        <p><code>web/Server.scala</code> serves this site and a small API backed by the same Scala code, in one Docker image on Render.</p>
+        <ul>
+          <li><strong>Scoring</strong> on the overview page runs the leak-free model with today as the cutoff.</li>
+          <li><strong>The watchlist</strong> is re-checked every six hours: the last two years of Google News for each startup, matched, scored and run through both models. A GitHub Actions cron job wakes the free server so the schedule holds.</li>
+          <li><strong>Your startup</strong> is scored immediately and saved in a Render Key Value store, so it stays on the watchlist across restarts.</li>
+          <li><strong>Everyday-word names</strong> like Ramp get help on the live pages only: their news search is narrowed with a founder or product name, and a headline must spell the name exactly as the company does.</li>
+          <li><strong>Established companies</strong> get a gentle warning. The model's weight on years since the first round is negative, so for a company long past its first round the score says more about age than about survival.</li>
+        </ul>
+      </article>
+
+      <article class="step" id="limits">
+        <h2>What it can't do</h2>
+        <ul>
+          <li>It learned from startups judged before 2013. Today's companies raise and fail on different timelines.</li>
+          <li>The tone weights come from only 69 startups with matched headlines, so the news score is illustrative.</li>
+          <li>An AUC of 0.68 ranks startups better than chance, but it is far from a verdict on any single company.</li>
+        </ul>
+        <p><a href="/startups/">See it on real startups.</a></p>
+      </article>
+    </div>
+  </section>
+
+  <script>import "../scripts/how.js";</script>
+</Base>

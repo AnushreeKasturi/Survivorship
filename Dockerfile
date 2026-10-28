@@ -27,8 +27,8 @@ FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=server /lib-out lib/
 COPY --from=site /src/web/dist site/
-COPY results/model_coefficients_leakfree.json .
-ENV HOST=0.0.0.0 PORT=8080 SITE_DIR=/app/site MODEL_COEFFICIENTS=/app/model_coefficients_leakfree.json
+COPY results/model_coefficients_leakfree.json startups/watchlist.json ./
+ENV HOST=0.0.0.0 PORT=8080 SITE_DIR=/app/site MODEL_COEFFICIENTS=/app/model_coefficients_leakfree.json WATCHLIST=/app/watchlist.json
 USER 65534
 EXPOSE 8080
 # Serial GC and C1-only JIT: faster cold starts on a fractional-CPU free instance.

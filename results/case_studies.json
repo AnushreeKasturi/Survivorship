@@ -1,0 +1,1148 @@
+{
+  "generatedAt" : "2026-10-28T16:17:09.525037Z",
+  "threshold" : 0.5,
+  "cases" : [ {
+    "asOf" : "2020-04-21",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 1.7221081451060918,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
+    "correct" : false,
+    "sentiment" : {
+      "permalink" : "/demo",
+      "newsCount" : 50,
+      "positiveNewsCount" : 10,
+      "negativeNewsCount" : 0,
+      "neutralNewsCount" : 40,
+      "positiveRatio" : 0.2,
+      "negativeRatio" : 0.0,
+      "averageSentiment" : 0.2,
+      "recentSentiment" : 0.0,
+      "sentimentTrend" : -0.07999999999999999,
+      "sentimentVolatility" : 0.4040610178208843,
+      "newsVolumeTrend" : 50.0
+    },
+    "checkedAt" : "2026-10-28T16:16:55.412230Z",
+    "financialOnly" : 0.5232091581502474,
+    "financialSentiment" : 0.11205526625734963,
+    "scopedSearch" : false,
+    "profile" : {
+      "name" : "Quibi",
+      "foundedAt" : "2018-08-01",
+      "firstFundingAt" : "2018-08-01",
+      "categories" : [ "Video" ],
+      "country" : "USA",
+      "outcome" : "closed",
+      "outcomeDate" : "2020-10-21",
+      "note" : "Founded as NewTV in August 2018 with a $1B first round. Shutdown announced October 21, 2020.",
+      "sources" : [ "https://en.wikipedia.org/wiki/Quibi", "https://news.crunchbase.com/startups/quibi-shutting-down/" ],
+      "keywords" : [ ]
+    },
+    "rawHeadlines" : 56,
+    "headlines" : [ {
+      "positiveTerms" : [ "unicorn" ],
+      "score" : 1,
+      "text" : "Quibi: The next Go90, or streaming unicorn?",
+      "date" : "2019-06-04",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launch" ],
+      "score" : 1,
+      "text" : "Jeffrey Katzenberg, Meg Whitman Offer Details on Quibi Launch, Pricing",
+      "date" : "2019-06-08",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Jeffrey Katzenberg and Meg Whitman say video venture Quibi is in a category of its own",
+      "date" : "2019-06-08",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "All the projects coming to Quibi, Jeffrey Katzenberg's bite-size streaming service",
+      "date" : "2019-06-13",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "What Is Jeffrey Katzenberg’s Quibi All About, and Why Should You Care?",
+      "date" : "2019-06-14",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi Has Already Booked $100 Million in Ad Sales, Jeffrey Katzenberg and Meg Whitman Say",
+      "date" : "2019-06-19",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi: All the Programming (So Far) Set for Jeffrey Katzenberg’s Shortform Streaming Platform",
+      "date" : "2019-07-01",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi is a built-for-millennials streaming service. But will they pay $5 a month?",
+      "date" : "2019-08-01",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "raises" ],
+      "score" : 1,
+      "text" : "Quibi raises $400 million to make more bite-sized shows",
+      "date" : "2020-01-08",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi's secret weapon: Videos that work in portrait and landscape mode",
+      "date" : "2020-01-08",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Why Quibi’s snack-size streaming service could actually live up to the hype",
+      "date" : "2020-01-08",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi streaming service will cost $5 a month with ads, or $8 without",
+      "date" : "2020-01-08",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi: Everything You Need To Know About Jeffrey Katzenberg's New Short-Form Streaming Service",
+      "date" : "2020-01-08",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi introduces tech for combining horizontal and vertical viewing",
+      "date" : "2020-01-09",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "John Travolta to Star Opposite Kevin Hart in Quibi Action Series ‘Die Hart’",
+      "date" : "2020-02-04",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "What Is Quibi, the New Platform Taking on Big Streaming?",
+      "date" : "2020-03-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "What is Quibi? What to know about the company shaking up streaming",
+      "date" : "2020-03-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "What Is Quibi? Everything You Need to Know About the 'Quick Bite' Streaming Service",
+      "date" : "2020-03-23",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launch" ],
+      "score" : 1,
+      "text" : "As Jeffrey Katzenberg’s Quibi Races Toward Launch, Will a Changed World Help or Hurt?",
+      "date" : "2020-03-26",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launching" ],
+      "score" : 1,
+      "text" : "Jeffrey Katzenberg On Launching Quibi During A Pandemic, Recruiting J.J. Abrams",
+      "date" : "2020-03-27",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launch" ],
+      "score" : 1,
+      "text" : "Quibi's Launch Lineup: Every Show and 'Movie in Chapters' Coming to the New Streaming Service",
+      "date" : "2020-04-02",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi Is Jeffrey Katzenberg’s $1.7 Billion Gamble",
+      "date" : "2020-04-03",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi app review: shifting landscape",
+      "date" : "2020-04-05",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi review: No one asked for this — but it's kind of great",
+      "date" : "2020-04-05",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Why the People Behind Quibi Are So Confident",
+      "date" : "2020-04-05",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi Is Finally Here. Wait, What’s Quibi?",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "best" ],
+      "score" : 1,
+      "text" : "Ranking The New Quibi Shows From Worst To Best",
+      "date" : "2020-04-06",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "What is Quibi?",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi Is a Streaming Service Like We've Never Seen Before. Here's What You Need to Know.",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi's short video service for phones is better than I thought it'd be — except for the ads",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Dishmantled Review: Blast More of This Quibi Show Into My Face",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Everything You Need to Know About Quibi, the New Short-Form Streaming Service",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Review: New Streamer Quibi Shows Off Its Short Shorts",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "We Watched Every New Show on Quibi. Here's What to Watch—and What to Skip",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "What is Quibi? The new short-form streaming service for your phone, explained.",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi: New video streaming service makes a bet on short-form entertainment",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi: 12 short stories about streaming’s new short-form experiment",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launch" ],
+      "score" : 1,
+      "text" : "Quibi Picked the Worst Time to Launch a Streaming Service for Short Attention Spans",
+      "date" : "2020-04-06",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "I signed onto EW's Quibi series about late-night TV — and then we all went on lockdown",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi is YouTube for people who hate YouTube. Let us explain",
+      "date" : "2020-04-07",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launches" ],
+      "score" : 1,
+      "text" : "Short-form streaming app Quibi launches to rival Netflix",
+      "date" : "2020-04-07",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "An Exhaustive Guide to Every Celebrity You’re Going To See On Quibi",
+      "date" : "2020-04-07",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "A Taste Test Of Quibi's New Bite-Sized Food Programming",
+      "date" : "2020-04-08",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Will Forte Talks Quibi’s Flipped, MacGruber, Last Man on Earth | Collider Connected",
+      "date" : "2020-04-10",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "best" ],
+      "score" : 1,
+      "text" : "The Best Quibi Shows to Stream Now (October 2020)",
+      "date" : "2020-04-13",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi reaches 1.7m downloads in the first week",
+      "date" : "2020-04-13",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi’s 50 States of Fright Review: Sam Raimi's Horror Series Is Just Fine",
+      "date" : "2020-04-13",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "WWE superstars Becky Lynch and Sonya Deville on Quibi series 'Fight Like a Girl'",
+      "date" : "2020-04-14",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "12 Quibi-Length Reviews Of Quibi Shows",
+      "date" : "2020-04-16",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Let Me Screenshot Your Quibi Show, Cowards",
+      "date" : "2020-04-17",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    } ],
+    "ambiguousName" : false
+  }, {
+    "asOf" : "2015-07-01",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 1.998631074606434,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
+    "correct" : false,
+    "sentiment" : {
+      "permalink" : "/demo",
+      "newsCount" : 0,
+      "positiveNewsCount" : 0,
+      "negativeNewsCount" : 0,
+      "neutralNewsCount" : 0,
+      "positiveRatio" : 0.0,
+      "negativeRatio" : 0.0,
+      "averageSentiment" : 0.0
+    },
+    "checkedAt" : "2026-10-28T16:16:56.975868Z",
+    "financialOnly" : 0.6162086883874595,
+    "scopedSearch" : false,
+    "profile" : {
+      "name" : "Juicero",
+      "foundedAt" : "2013-07-01",
+      "firstFundingAt" : "2013-07-01",
+      "categories" : [ "Hardware + Software" ],
+      "country" : "USA",
+      "outcome" : "closed",
+      "outcomeDate" : "2017-09-01",
+      "note" : "Founded and first funded in 2013 (month not public). Announced it was shutting down on September 1, 2017.",
+      "sources" : [ "https://techcrunch.com/2017/09/01/rip-juicero-the-400-venture-backed-juice-machine/", "https://www.failory.com/cemetery/juicero" ],
+      "keywords" : [ ]
+    },
+    "rawHeadlines" : 2,
+    "headlines" : [ ],
+    "ambiguousName" : false
+  }, {
+    "asOf" : "2021-10-05",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 1.596167008898015,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
+    "correct" : false,
+    "sentiment" : {
+      "permalink" : "/demo",
+      "newsCount" : 6,
+      "positiveNewsCount" : 5,
+      "negativeNewsCount" : 0,
+      "neutralNewsCount" : 1,
+      "positiveRatio" : 0.8333333333333334,
+      "negativeRatio" : 0.0,
+      "averageSentiment" : 0.8333333333333334,
+      "recentSentiment" : 0.0,
+      "sentimentTrend" : -0.33333333333333337,
+      "sentimentVolatility" : 0.408248290463863,
+      "newsVolumeTrend" : 2.0
+    },
+    "checkedAt" : "2026-10-28T16:16:58.518322Z",
+    "financialOnly" : 0.5192890238531696,
+    "financialSentiment" : 0.7922024938710062,
+    "scopedSearch" : true,
+    "profile" : {
+      "name" : "Fast",
+      "foundedAt" : "2019-07-01",
+      "firstFundingAt" : "2020-03-01",
+      "categories" : [ "Finance" ],
+      "country" : "USA",
+      "outcome" : "closed",
+      "outcomeDate" : "2022-04-05",
+      "note" : "One-click checkout, founded 2019. Earliest reported round is the Stripe-led Series A in March 2020. Shut down April 5, 2022.",
+      "sources" : [ "https://www.wfae.org/2022-04-05/fast-the-easy-checkout-startup-shuts-down-after-burning-through-investors-money", "https://www.fintechfutures.com/fintech/stripe-backed-one-click-checkout-fintech-fast-folds" ],
+      "keywords" : [ "Domm Holland", "one-click checkout" ]
+    },
+    "rawHeadlines" : 9,
+    "headlines" : [ {
+      "positiveTerms" : [ "hires" ],
+      "score" : 1,
+      "text" : "Startup Fast hires Jason Alderman as first CCO",
+      "date" : "2020-04-07",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launches" ],
+      "score" : 1,
+      "text" : "Fast Launches One-Click Checkout for Every Device, Platform and Browser",
+      "date" : "2020-09-02",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "raise" ],
+      "score" : 1,
+      "text" : "Pitch Deck Fast Used to Raise $20 Million From Fintech Stripe",
+      "date" : "2020-11-03",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "funding" ],
+      "score" : 1,
+      "text" : "Stripe leads $102 million funding round for online checkout start-up Fast",
+      "date" : "2021-01-26",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "funding" ],
+      "score" : 1,
+      "text" : "Fast Announces $102 Million in Series B Funding, Fueling Rapid Adoption of One-Click Checkout Across the Internet",
+      "date" : "2021-01-26",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "How online checkout startup Fast is reinventing online shopping",
+      "date" : "2021-08-10",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    } ],
+    "ambiguousName" : true
+  }, {
+    "asOf" : "2017-07-01",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 2.001368925393566,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
+    "correct" : false,
+    "sentiment" : {
+      "permalink" : "/demo",
+      "newsCount" : 2,
+      "positiveNewsCount" : 1,
+      "negativeNewsCount" : 0,
+      "neutralNewsCount" : 1,
+      "positiveRatio" : 0.5,
+      "negativeRatio" : 0.0,
+      "averageSentiment" : 0.5,
+      "recentSentiment" : 1.0,
+      "sentimentTrend" : 1.0,
+      "sentimentVolatility" : 0.7071067811865476,
+      "newsVolumeTrend" : 2.0
+    },
+    "checkedAt" : "2026-10-28T16:17:01.669375Z",
+    "financialOnly" : 0.5486373030559604,
+    "financialSentiment" : 0.24292449359781773,
+    "scopedSearch" : true,
+    "profile" : {
+      "name" : "Convoy",
+      "foundedAt" : "2015-07-01",
+      "firstFundingAt" : "2015-07-01",
+      "categories" : [ "Logistics" ],
+      "country" : "USA",
+      "outcome" : "closed",
+      "outcomeDate" : "2023-10-19",
+      "note" : "Digital freight broker founded and first backed by angels in 2015. Shut down operations October 19, 2023.",
+      "sources" : [ "https://fortune.com/2023/10/19/convoy-trucking-tech-startup-shuts-down-jeff-bezos-investor", "https://www.bloomberg.com/news/articles/2023-10-19/bezos-backed-startup-convoy-closes-operations-with-no-buyer" ],
+      "keywords" : [ "Dan Lewis", "Grant Goodale", "digital freight" ]
+    },
+    "rawHeadlines" : 3,
+    "headlines" : [ {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Tech Moves: Convoy investor Grant Ries joins startup as chief business officer; HomeAway names John Kim president; and more",
+      "date" : "2016-09-26",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "best" ],
+      "score" : 1,
+      "text" : "Working Geek: How Convoy CTO Grant Goodale gets his best ideas",
+      "date" : "2016-10-06",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    } ],
+    "ambiguousName" : true
+  }, {
+    "asOf" : "2011-01-01",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 1.998631074606434,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
+    "correct" : false,
+    "sentiment" : {
+      "permalink" : "/demo",
+      "newsCount" : 2,
+      "positiveNewsCount" : 2,
+      "negativeNewsCount" : 0,
+      "neutralNewsCount" : 0,
+      "positiveRatio" : 1.0,
+      "negativeRatio" : 0.0,
+      "averageSentiment" : 1.5,
+      "recentSentiment" : 2.0,
+      "sentimentTrend" : 1.0,
+      "sentimentVolatility" : 0.7071067811865476,
+      "newsVolumeTrend" : 2.0
+    },
+    "checkedAt" : "2026-10-28T16:17:03.294488Z",
+    "financialOnly" : 0.47753722009943916,
+    "financialSentiment" : 0.17986650888891179,
+    "scopedSearch" : false,
+    "profile" : {
+      "name" : "Airbnb",
+      "foundedAt" : "2008-08-01",
+      "firstFundingAt" : "2009-01-01",
+      "categories" : [ "E-Commerce" ],
+      "country" : "USA",
+      "outcome" : "operating",
+      "outcomeDate" : "2020-12-10",
+      "note" : "Founded August 2008; Y Combinator in January 2009, Sequoia seed in April 2009. Public since December 2020.",
+      "sources" : [ "https://en.wikipedia.org/wiki/Airbnb" ],
+      "keywords" : [ ]
+    },
+    "rawHeadlines" : 3,
+    "headlines" : [ {
+      "positiveTerms" : [ "raises" ],
+      "score" : 1,
+      "text" : "JUST ANNOUNCED: Airbnb Raises $7.2MM Series A Round and Releases iPhone App",
+      "date" : "2010-11-10",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "raises", "expand" ],
+      "score" : 2,
+      "text" : "Airbnb Raises Cash to Expand Budget-Travel Service",
+      "date" : "2010-11-10",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    } ],
+    "ambiguousName" : false
+  }, {
+    "asOf" : "2012-07-01",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 2.001368925393566,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
+    "correct" : true,
+    "sentiment" : {
+      "permalink" : "/demo",
+      "newsCount" : 3,
+      "positiveNewsCount" : 2,
+      "negativeNewsCount" : 0,
+      "neutralNewsCount" : 1,
+      "positiveRatio" : 0.6666666666666666,
+      "negativeRatio" : 0.0,
+      "averageSentiment" : 0.6666666666666666,
+      "recentSentiment" : 0.0,
+      "sentimentTrend" : -0.5,
+      "sentimentVolatility" : 0.5773502691896258,
+      "newsVolumeTrend" : 1.0
+    },
+    "checkedAt" : "2026-10-28T16:17:04.864671Z",
+    "financialOnly" : 0.5015381889397125,
+    "financialSentiment" : 0.46975172606770527,
+    "scopedSearch" : true,
+    "profile" : {
+      "name" : "Stripe",
+      "foundedAt" : "2010-07-01",
+      "firstFundingAt" : "2010-07-01",
+      "categories" : [ "Finance" ],
+      "country" : "USA",
+      "outcome" : "operating",
+      "note" : "Founded 2010 as /dev/payments with Y Combinator seed money that year (month disputed). Still private and operating.",
+      "sources" : [ "https://vator.tv/2016-12-29-when-stripe-was-young-the-early-years/", "https://www.startupgrind.com/blog/the-collison-brothers-and-story-behind-the-founding-of-stripe" ],
+      "keywords" : [ "Patrick Collison", "John Collison", "payments" ]
+    },
+    "rawHeadlines" : 26,
+    "headlines" : [ {
+      "positiveTerms" : [ "invests" ],
+      "score" : 1,
+      "text" : "Peter Thiel invests in Collison brothers’ latest venture Stripe",
+      "date" : "2011-03-29",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "backed" ],
+      "score" : 1,
+      "text" : "Inside Stripe, The PayPal Competitor Backed By PayPal Founders Peter Thiel, Elon Musk",
+      "date" : "2012-02-01",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Stripe Aims to Reinvent E-Payments",
+      "date" : "2012-02-23",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    } ],
+    "ambiguousName" : true
+  }, {
+    "asOf" : "2015-07-01",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 1.998631074606434,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
+    "correct" : true,
+    "sentiment" : {
+      "permalink" : "/demo",
+      "newsCount" : 30,
+      "positiveNewsCount" : 0,
+      "negativeNewsCount" : 0,
+      "neutralNewsCount" : 30,
+      "positiveRatio" : 0.0,
+      "negativeRatio" : 0.0,
+      "averageSentiment" : 0.0,
+      "recentSentiment" : 0.0,
+      "sentimentTrend" : 0.0,
+      "sentimentVolatility" : 0.0,
+      "newsVolumeTrend" : 2.0
+    },
+    "checkedAt" : "2026-10-28T16:17:06.420537Z",
+    "financialOnly" : 0.5628592132831154,
+    "financialSentiment" : 0.40167875795300906,
+    "scopedSearch" : false,
+    "profile" : {
+      "name" : "Figma",
+      "foundedAt" : "2012-07-01",
+      "firstFundingAt" : "2013-07-01",
+      "categories" : [ "Software" ],
+      "country" : "USA",
+      "outcome" : "operating",
+      "outcomeDate" : "2025-07-31",
+      "note" : "Founded 2012; Index Ventures led the 2013 seed. Listed on the NYSE July 31, 2025.",
+      "sources" : [ "https://www.fortune.com/2025/07/01/figma-ipo-s-1-after-20-billion-adobe-deal-abandoned-dylan-field", "https://www.bloomberg.com/news/articles/2025-07-30/figma-said-expected-to-price-ipo-above-range-at-33-per-share" ],
+      "keywords" : [ ]
+    },
+    "rawHeadlines" : 33,
+    "headlines" : [ {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Link Ink: ‘X-Men: Days Of Future Past’ Gets A Sentinel, Spidey’s Figma And DC Pet Plushies",
+      "date" : "2013-07-19",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Revamped Hatsune Miku Figure is Figma No. 200! “Figma Hatsune Miku 2.0” to Release This October!",
+      "date" : "2013-07-29",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Fire Emblem: Awakening’s Marth Gets A Figma At Last",
+      "date" : "2013-07-29",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Real Action Hero Link and \"Fire Emblem\" Marth Figma on the Way",
+      "date" : "2013-07-30",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Rocket Toy Review: Figma Link",
+      "date" : "2013-08-12",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Attack On Titan – Eren Figma and Nendoroid Preview",
+      "date" : "2013-10-17",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "\"Attack on Titan\" Levi Figma Previewed",
+      "date" : "2013-10-31",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Astro Toy - Figma Hatsune Miku 2.0",
+      "date" : "2013-12-08",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Limited Edition of \"Sonico\" Anime With Figma Sells Out",
+      "date" : "2014-01-14",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Toy Review: The ‘Attack On Titan’ Mikasa Ackerman Figma [Video]",
+      "date" : "2014-04-05",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Astro Toy - Figma Strength",
+      "date" : "2014-04-13",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Nerd Buy: ‘Dawn of the Dead’ Zombie Stephen Figma",
+      "date" : "2014-04-23",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Astro Toy - Figma Rintarou Okabe",
+      "date" : "2014-04-27",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Astro Toy - Figma Eren Yeager and Mikasa Ackerman",
+      "date" : "2014-06-08",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Yowamushi Pedal's Onoda Gets A Figma",
+      "date" : "2014-07-26",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Fire Emblem: Awakening’s Lucina Figma Is Still Alive",
+      "date" : "2014-07-28",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Astro Toy - Figma Crystal Bowie",
+      "date" : "2014-08-17",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "TOY REVIEW: Hallelujah! ‘Figma – Kill la Kill Ryuko Matoi’ is bloody fantastic",
+      "date" : "2014-09-29",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Astro Toy - Figma Ryuko Matoi",
+      "date" : "2014-10-12",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Astro Toy - Figma Inogashira Goro Extra Helping Version",
+      "date" : "2014-11-09",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Masterpiece Magical Girl Comic Cardcaptor Sakura Main Character Sakura Kinomoto Appears as a figma Dressed in Outfit from Comic Vol. 1 Cover",
+      "date" : "2014-11-11",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Check Out This Gorgeous Lucina Figma Figure",
+      "date" : "2014-12-07",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Astro Toy - Figma Ninja Slayer",
+      "date" : "2014-12-07",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "\"Kill La Kill\" figma Satsuki Kiryuin Goes on Sale",
+      "date" : "2015-01-27",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "\"IDOLM@STER: Cinderella Girls\" Rin Shibuya Figma Goes on Sale",
+      "date" : "2015-02-24",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Toy review: Figma 227 Saber 2.0 (with Video)",
+      "date" : "2015-02-27",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Bubble Head Nurse From Silent Hill 2 Gets Figma Figurine",
+      "date" : "2015-05-11",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Silent Hill 2 Bubble Head Nurse Figma Figure",
+      "date" : "2015-05-14",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Figma Review: Sinon (Sword Art Online II)",
+      "date" : "2015-06-02",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Figma Review: Kirito (Sword Art Online)",
+      "date" : "2015-06-02",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    } ],
+    "ambiguousName" : false
+  }, {
+    "asOf" : "2013-10-01",
+    "maturity" : {
+      "establishedAfter" : 10.0,
+      "source" : "design rule: 5 and 10 years after the first round",
+      "yearsSinceFirstFunding" : 2.001368925393566,
+      "olderAfter" : 5.0,
+      "level" : "young"
+    },
+    "correct" : true,
+    "sentiment" : {
+      "permalink" : "/demo",
+      "newsCount" : 22,
+      "positiveNewsCount" : 4,
+      "negativeNewsCount" : 0,
+      "neutralNewsCount" : 18,
+      "positiveRatio" : 0.18181818181818182,
+      "negativeRatio" : 0.0,
+      "averageSentiment" : 0.18181818181818182,
+      "recentSentiment" : 0.0,
+      "sentimentTrend" : -0.1818181818181818,
+      "sentimentVolatility" : 0.39477101697586126,
+      "newsVolumeTrend" : 8.0
+    },
+    "checkedAt" : "2026-10-28T16:17:08.014868Z",
+    "financialOnly" : 0.6519376142319036,
+    "financialSentiment" : 0.6683898549281077,
+    "scopedSearch" : false,
+    "profile" : {
+      "name" : "Duolingo",
+      "foundedAt" : "2011-07-01",
+      "firstFundingAt" : "2011-10-01",
+      "categories" : [ "Education" ],
+      "country" : "USA",
+      "outcome" : "operating",
+      "outcomeDate" : "2021-07-28",
+      "note" : "Founded 2011; $3.3M Series A led by Union Square Ventures in October 2011. Nasdaq IPO July 28, 2021.",
+      "sources" : [ "https://en.wikipedia.org/wiki/Duolingo" ],
+      "keywords" : [ ]
+    },
+    "rawHeadlines" : 32,
+    "headlines" : [ {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Duolingo will translate the internet while teaching languages",
+      "date" : "2011-12-15",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "public" ],
+      "score" : 1,
+      "text" : "Duolingo wants your help translating the entire web, now open to the public",
+      "date" : "2012-06-19",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launches" ],
+      "score" : 1,
+      "text" : "Duolingo launches as crowdsourced translation service",
+      "date" : "2012-06-19",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Press Release: Duolingo.com Users Will Translate Web As They Learn a New Language",
+      "date" : "2012-06-19",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Learn A Language And Translate For Practice With Duolingo (Now Open To All!)",
+      "date" : "2012-06-28",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Duolingo Gets $15 Million To Translate The World's Text Through Online Learning",
+      "date" : "2012-09-17",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Duolingo: Learn a Language for Free While Helping to Translate the Web",
+      "date" : "2012-09-19",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Duolingo brings free language learning to the iPhone",
+      "date" : "2012-11-13",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Learning a language and translating the web: does Duolingo work?",
+      "date" : "2012-11-14",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launches" ],
+      "score" : 1,
+      "text" : "Duolingo Launches iPhone and iPad App",
+      "date" : "2012-11-22",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Duolingo (for iPhone)",
+      "date" : "2013-04-09",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launching" ],
+      "score" : 1,
+      "text" : "Duolingo launching on Android; plans move to bigger office",
+      "date" : "2013-05-29",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Duolingo Releases Android App, Brings Free Language Learning On The Go",
+      "date" : "2013-05-29",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Duolingo: Learn languages playfully with this Android app",
+      "date" : "2013-06-04",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "FunBITS: Duolingo Makes Learning Languages Enjoyable",
+      "date" : "2013-06-14",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Duolingo App Updated With Tablet Optimizations, Landscape Support, And Leaderboards",
+      "date" : "2013-06-26",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Web-gaming review: Duolingo",
+      "date" : "2013-07-09",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Duolingo (for iPad)",
+      "date" : "2013-07-09",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Free Language-Learning Site Duolingo Adds iPad App",
+      "date" : "2013-07-11",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Duolingo brings free language courses to the iPad",
+      "date" : "2013-07-11",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Review: Duolingo – learn a new language for free",
+      "date" : "2013-07-17",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Duolingo Takes Online Teaching To The Next Level, By Crowd Sourcing New Languages",
+      "date" : "2013-09-25",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    } ],
+    "ambiguousName" : false
+  } ]
+}
