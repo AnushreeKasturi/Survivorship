@@ -21,7 +21,7 @@ jobs:
           cache: sbt
       - uses: sbt/setup-sbt@v1
       - run: sbt compile package
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: startup-survival-prediction-jar
           path: scala/target/scala-2.12/*.jar
