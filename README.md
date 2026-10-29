@@ -54,6 +54,35 @@ From `results/cv_summary.csv` and `results/significance.csv` (logistic regressio
 
 Details in `report/results.md` and `docs/PHASE18b_cross_validated_experiments.md`.
 
+## Model benchmark
+
+Every change to the live structural model is judged by `ml/Benchmark.scala`:
+the same stratified 5 folds as `ExperimentRunner`, all 22,075 startups,
+leak-free features only, and a paired bootstrap of out-of-fold scores against
+the baseline. A candidate counts as an improvement only when its AUC gain's 95%
+interval is above zero. From `results/benchmark.json`:
+
+| Candidate | AUC | vs logistic regression | Case studies (8) |
+|---|---|---|---|
+| Logistic regression (baseline) | 0.679 | | 3 |
+| Logistic regression, L2 0.1 | 0.678 | −0.001, worse | 3 |
+| Gradient-boosted trees | 0.689 | +0.010 [+0.002, +0.017], better | 5 |
+| Random forest, 200 trees | 0.698 | +0.019 [+0.012, +0.025], better | 5 |
+| **Random forest, 100 trees (live)** | **0.699** | **+0.019 [+0.013, +0.026], better** | **5** |
+
+The case studies are a sanity check only: eight outcomes can't tell models
+apart. To try an enhancement, add a `Candidate` and run:
+
+```bash
+cd scala
+sbt "runMain com.startupsurvival.ml.Benchmark file:///path/to/labeled_eligible_startups.csv"
+# add --export=<candidate> to write results/model_structural.json for the server
+```
+
+The export writes the forest as plain JSON and checks that it reproduces
+Spark's probabilities (max difference 4e-16 on 2,000 startups). The news model
+is still logistic regression: its batch-collected headlines aren't in the repo.
+
 ## Technology stack
 
 | Layer | Technology | Purpose |
@@ -96,13 +125,15 @@ visualisation; the graded pipeline is Scala + Spark.
 ## Web demo (Phase 20)
 
 The site in `web/` explains the pipeline and runs the real Scala code live:
-sentiment scoring, name matching, and survival prediction with the leak-free
-LR models from `results/model_coefficients_leakfree.json`. Results are baked in
-from `results/` at build time. Three pages:
+sentiment scoring, name matching, and survival prediction with the random
+forest from `results/model_structural.json` (and the news model from
+`results/model_coefficients_leakfree.json`). Results are baked in from
+`results/` at build time. Four pages:
 
-- **Overview:** the population, the pipeline, the live lab and the cross-validated results.
-- **How it works:** the method end to end, from the 2013 cutoff to the scheduler.
-- **Startups:** eight startups with known endings, a live watchlist, and a form to add your own.
+- **Overview:** the population, the pipeline, the predictor and the cross-validated results.
+- **Startups:** eight startups with known endings and the live watchlist, as cards.
+- **Archive:** every startup ever scored, with score history, plus a queue for visitor suggestions.
+- **How it works:** the method end to end, from the 2013 cutoff to the benchmark and the scheduler.
 
 The startups in `startups/` were checked against the public sources listed with
 each one; dates known only to the year are set to 1 July. Case studies are
@@ -113,28 +144,31 @@ closing), with news from the two years before that:
 cd scala && sbt "runMain com.startupsurvival.web.Tracker"   # writes results/case_studies.json
 ```
 
-The watchlist is scored live: the server re-checks `startups/watchlist.json`
-plus visitor additions every six hours, with today as the cutoff.
-`.github/workflows/watchlist.yml` wakes the free Render instance on the same
-schedule. Set `KV_URL` (a `redis://` URL, such as a Render Key Value internal
-URL) to keep visitor additions across restarts; without it they live in memory.
+The watchlist is scored live: every six hours the server reads the latest
+GDELT bulk files into a news archive, then re-scores `startups/watchlist.json`
+and visitor additions with news from Google News and that archive, with today
+as the cutoff. Visitor suggestions wait in a queue that is scored every ten
+minutes while the server is awake (`QUEUE_MINUTES`). Each score is kept as
+history. `.github/workflows/watchlist.yml` wakes the free Render instance every
+six hours. Set `KV_URL` (a `redis://` URL, such as a Render Key Value internal
+URL) to keep suggestions, history and the news archive across restarts.
+`docs/NEWS_AGGREGATION.md` covers how news is collected and where it should go.
 
 Two live-only adjustments, never used in training:
 
 - **Everyday-word names** (Ramp, Notion, Stripe): profiles can list `keywords`
   (a founder, a product). The news search is narrowed with them, and a
   headline must spell the name exactly as the company does.
-- **Maturity warning:** the model's weight on years since the first round is
-  negative, so long-established companies score low by extrapolation. The site
-  flags companies 5+ years past their first round and fades the score at 10+.
-  Run `sbt "runMain com.startupsurvival.spark.FeatureRanges"` on the real data
-  to write `results/feature_ranges.json`; the server then uses the training
-  data's 90th and 99th percentiles instead of those design bounds.
+- **Maturity warning:** the model learned from startups judged within a few
+  years of their first round, so long-established companies score by
+  extrapolation. `results/feature_ranges.json` (from `spark.FeatureRanges`)
+  holds the training data's range: 90% were within 6.8 years of their first
+  round and 99% within 13. The site flags companies past those points.
 
 ```bash
 cd web && npm ci && npm run build       # Node 22.12+
 cd ../scala && sbt "runMain com.startupsurvival.web.Server"
-# http://localhost:8080   (HOST, PORT, SITE_DIR, MODEL_COEFFICIENTS, WATCHLIST, KV_URL, FEATURE_RANGES env vars)
+# http://localhost:8080   (HOST, PORT, SITE_DIR, MODEL_COEFFICIENTS, STRUCTURAL_MODEL, WATCHLIST, KV_URL, FEATURE_RANGES, QUEUE_MINUTES)
 ```
 
 For front-end work, run `npm run dev` in `web/` with the Scala server still

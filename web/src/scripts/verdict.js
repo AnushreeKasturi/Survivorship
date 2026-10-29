@@ -2,7 +2,9 @@
 
 export const pct = (p) => `${Math.round(p * 100)}%`;
 
-export const word = (p) => (p >= 0.65 ? "Likely to keep going" : p >= 0.5 ? "Leaning towards surviving" : p >= 0.35 ? "Uncertain" : "At risk");
+/** Bands around the model's decision threshold; the forest's scores sit close to it, so the bands are narrow. */
+export const word = (p, t = 0.5) =>
+  p >= t + 0.05 ? "Likely to keep going" : p >= t ? "Leaning towards surviving" : p >= t - 0.05 ? "Leaning towards closing" : "At risk";
 
 const years = (m) => Math.round(m.yearsSinceFirstFunding);
 

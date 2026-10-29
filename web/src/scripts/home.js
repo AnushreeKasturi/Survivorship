@@ -44,7 +44,7 @@ onSubmit("predict-form", async (f) => {
   const p = r.financialSentiment ?? r.financialOnly;
   ring.style.strokeDashoffset = 565 * (1 - p);
   verdict.querySelector(".pct span").textContent = pct(p);
-  verdict.querySelector(".word").textContent = word(p);
+  verdict.querySelector(".word").textContent = word(p, r.threshold);
   verdict.querySelector(".basis").textContent = r.financialSentiment != null
     ? `With your headlines. Without them: ${pct(r.financialOnly)}.`
     : "From age, funding timing, category and country.";

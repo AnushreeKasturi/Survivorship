@@ -1,0 +1,284 @@
+{
+  "population" : {
+    "startups" : 22075,
+    "closed" : 2902
+  },
+  "candidates" : [ {
+    "aucMean" : 0.6792363473595016,
+    "name" : "lr",
+    "aucSd" : 0.0047237379913418285,
+    "brier" : 0.2252524969366579,
+    "description" : "Logistic regression, L2 0.01 (the live model's configuration)",
+    "balancedAccuracyTuned" : 0.6321398170662906,
+    "tunedThreshold" : 0.5090989049916397,
+    "aucPooled" : 0.6789052528820698,
+    "verdict" : "baseline",
+    "caseStudies" : {
+      "correctAt05" : 3,
+      "correctAtTuned" : 2,
+      "of" : 8,
+      "scores" : [ {
+        "name" : "Quibi",
+        "operating" : false,
+        "p" : 0.5232091581502474
+      }, {
+        "name" : "Juicero",
+        "operating" : false,
+        "p" : 0.6162086883874596
+      }, {
+        "name" : "Fast",
+        "operating" : false,
+        "p" : 0.5192890238531696
+      }, {
+        "name" : "Convoy",
+        "operating" : false,
+        "p" : 0.5486373030559604
+      }, {
+        "name" : "Airbnb",
+        "operating" : true,
+        "p" : 0.4775372200994392
+      }, {
+        "name" : "Stripe",
+        "operating" : true,
+        "p" : 0.5015381889397126
+      }, {
+        "name" : "Figma",
+        "operating" : true,
+        "p" : 0.5628592132831154
+      }, {
+        "name" : "Duolingo",
+        "operating" : true,
+        "p" : 0.6519376142319036
+      } ]
+    },
+    "balancedAccuracyAt05" : 0.6328593348035694,
+    "prAucClosed" : 0.2361004531531678
+  }, {
+    "aucMean" : 0.6784057412365352,
+    "name" : "lr-l2-0.1",
+    "aucSd" : 0.003986774583683579,
+    "brier" : 0.2278015899447008,
+    "description" : "Logistic regression, stronger L2 0.1",
+    "balancedAccuracyTuned" : 0.6335076897671867,
+    "tunedThreshold" : 0.509412909124849,
+    "aucPooled" : 0.6781048761174641,
+    "verdict" : "worse",
+    "deltaAucVsBaseline" : {
+      "delta" : -8.003767646057591E-4,
+      "ciLow" : -0.0015537538095464765,
+      "ciHigh" : -6.322207675968361E-5,
+      "p" : 0.035
+    },
+    "caseStudies" : {
+      "correctAt05" : 3,
+      "correctAtTuned" : 2,
+      "of" : 8,
+      "scores" : [ {
+        "name" : "Quibi",
+        "operating" : false,
+        "p" : 0.5157959699313125
+      }, {
+        "name" : "Juicero",
+        "operating" : false,
+        "p" : 0.5857594475622983
+      }, {
+        "name" : "Fast",
+        "operating" : false,
+        "p" : 0.5203816223744372
+      }, {
+        "name" : "Convoy",
+        "operating" : false,
+        "p" : 0.5316248414468299
+      }, {
+        "name" : "Airbnb",
+        "operating" : true,
+        "p" : 0.494373433678166
+      }, {
+        "name" : "Stripe",
+        "operating" : true,
+        "p" : 0.5084598497257774
+      }, {
+        "name" : "Figma",
+        "operating" : true,
+        "p" : 0.5483319717860964
+      }, {
+        "name" : "Duolingo",
+        "operating" : true,
+        "p" : 0.6169452865884959
+      } ]
+    },
+    "balancedAccuracyAt05" : 0.6344975883017783,
+    "prAucClosed" : 0.23626468751919955
+  }, {
+    "aucMean" : 0.688681216068721,
+    "name" : "gbt",
+    "aucSd" : 0.013412516864686216,
+    "brier" : 0.20963372241379125,
+    "description" : "Gradient-boosted trees, 80 rounds, depth 4",
+    "balancedAccuracyTuned" : 0.6395821186057251,
+    "tunedThreshold" : 0.532899461036253,
+    "aucPooled" : 0.6884739814916759,
+    "verdict" : "better",
+    "deltaAucVsBaseline" : {
+      "delta" : 0.009568728609606114,
+      "ciLow" : 0.0022035222098661933,
+      "ciHigh" : 0.017406779585369625,
+      "p" : 0.008
+    },
+    "caseStudies" : {
+      "correctAt05" : 5,
+      "correctAtTuned" : 5,
+      "of" : 8,
+      "scores" : [ {
+        "name" : "Quibi",
+        "operating" : false,
+        "p" : 0.44327079818628323
+      }, {
+        "name" : "Juicero",
+        "operating" : false,
+        "p" : 0.31738344461699086
+      }, {
+        "name" : "Fast",
+        "operating" : false,
+        "p" : 0.3675107725003188
+      }, {
+        "name" : "Convoy",
+        "operating" : false,
+        "p" : 0.4227939817447329
+      }, {
+        "name" : "Airbnb",
+        "operating" : true,
+        "p" : 0.3511796688758483
+      }, {
+        "name" : "Stripe",
+        "operating" : true,
+        "p" : 0.32211266039942577
+      }, {
+        "name" : "Figma",
+        "operating" : true,
+        "p" : 0.3990414474180175
+      }, {
+        "name" : "Duolingo",
+        "operating" : true,
+        "p" : 0.64366840129778
+      } ]
+    },
+    "balancedAccuracyAt05" : 0.6406337712229785,
+    "prAucClosed" : 0.2534504213106691
+  }, {
+    "aucMean" : 0.697821564541129,
+    "name" : "rf",
+    "aucSd" : 0.009665036733957563,
+    "brier" : 0.21283468701697125,
+    "description" : "Random forest, 200 trees, depth 8",
+    "balancedAccuracyTuned" : 0.6483976756597218,
+    "tunedThreshold" : 0.5318447264292587,
+    "aucPooled" : 0.6975090477099893,
+    "verdict" : "better",
+    "deltaAucVsBaseline" : {
+      "delta" : 0.018603794827919518,
+      "ciLow" : 0.011838055663054958,
+      "ciHigh" : 0.025352697092445586,
+      "p" : 0.0
+    },
+    "caseStudies" : {
+      "correctAt05" : 5,
+      "correctAtTuned" : 6,
+      "of" : 8,
+      "scores" : [ {
+        "name" : "Quibi",
+        "operating" : false,
+        "p" : 0.4960090661814046
+      }, {
+        "name" : "Juicero",
+        "operating" : false,
+        "p" : 0.4878441166803919
+      }, {
+        "name" : "Fast",
+        "operating" : false,
+        "p" : 0.5097180000688619
+      }, {
+        "name" : "Convoy",
+        "operating" : false,
+        "p" : 0.4818865215900855
+      }, {
+        "name" : "Airbnb",
+        "operating" : true,
+        "p" : 0.4768090339315525
+      }, {
+        "name" : "Stripe",
+        "operating" : true,
+        "p" : 0.48072316257500425
+      }, {
+        "name" : "Figma",
+        "operating" : true,
+        "p" : 0.5829496509006211
+      }, {
+        "name" : "Duolingo",
+        "operating" : true,
+        "p" : 0.5545457014934755
+      } ]
+    },
+    "balancedAccuracyAt05" : 0.6458661536692475,
+    "prAucClosed" : 0.26139347783166167
+  }, {
+    "aucMean" : 0.6986610882448419,
+    "name" : "rf-100",
+    "aucSd" : 0.009480885640110438,
+    "brier" : 0.21308766722806333,
+    "description" : "Random forest, 100 trees, depth 8 (half the size to serve)",
+    "balancedAccuracyTuned" : 0.6455209077289404,
+    "tunedThreshold" : 0.4960750704679032,
+    "aucPooled" : 0.698276651316931,
+    "verdict" : "better",
+    "deltaAucVsBaseline" : {
+      "delta" : 0.01937139843486113,
+      "ciLow" : 0.01265422630832036,
+      "ciHigh" : 0.026377913694467292,
+      "p" : 0.0
+    },
+    "caseStudies" : {
+      "correctAt05" : 5,
+      "correctAtTuned" : 5,
+      "of" : 8,
+      "scores" : [ {
+        "name" : "Quibi",
+        "operating" : false,
+        "p" : 0.4921962497734804
+      }, {
+        "name" : "Juicero",
+        "operating" : false,
+        "p" : 0.47131939609623463
+      }, {
+        "name" : "Fast",
+        "operating" : false,
+        "p" : 0.5116034944647353
+      }, {
+        "name" : "Convoy",
+        "operating" : false,
+        "p" : 0.48690209580957544
+      }, {
+        "name" : "Airbnb",
+        "operating" : true,
+        "p" : 0.4645323989372973
+      }, {
+        "name" : "Stripe",
+        "operating" : true,
+        "p" : 0.4886305874162805
+      }, {
+        "name" : "Figma",
+        "operating" : true,
+        "p" : 0.5747575858807074
+      }, {
+        "name" : "Duolingo",
+        "operating" : true,
+        "p" : 0.5434525026620595
+      } ]
+    },
+    "balancedAccuracyAt05" : 0.645197480605965,
+    "prAucClosed" : 0.26180361126329865
+  } ],
+  "baseline" : "lr",
+  "generatedAt" : "2026-10-29T08:54:41.702129Z",
+  "protocol" : "Stratified 5-fold CV (seed 42, ExperimentRunner folds), leak-free features, balanced class weights, threshold tuned on an inner validation split; paired bootstrap of out-of-fold scores vs the baseline (2,000 resamples)."
+}

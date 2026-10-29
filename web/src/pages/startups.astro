@@ -1,22 +1,21 @@
 ---
 import Base from "../layouts/Base.astro";
-import { caseStudies, model } from "../lib/data.js";
+import { caseStudies, structural } from "../lib/data.js";
 
 const cases = caseStudies.cases;
 const hits = cases.filter((c) => c.correct).length;
 const closed = cases.filter((c) => c.profile.outcome === "closed").length;
-const featured = ["Software", "Mobile", "E-Commerce", "Finance", "Health Care", "Education", "SaaS", "Games"];
 ---
 
-<Base title="Real startups · Survivorship" description="Real startups scored by the pipeline: eight with known endings, a live watchlist, and your own." page="startups">
+<Base title="Real startups · Survivorship" description="Real startups scored by the pipeline: eight with known endings and a live watchlist." page="startups">
   <section style="padding-bottom: 40px">
     <div class="head center" style="margin: 0 auto">
       <h1 class="h1">Real startups</h1>
-      <p class="lede">See how the pipeline does on companies whose story we already know, follow some whose story is still being written, and add your own.</p>
+      <p class="lede">How the pipeline does on companies whose story we already know, and on some whose story is still being written.</p>
       <nav class="tabs" aria-label="On this page">
         <a href="#endings">Known endings</a>
         <a href="#watchlist">Watchlist</a>
-        <a href="#add">Add yours</a>
+        <a href="/archive/">Full archive</a>
       </nav>
     </div>
   </section>
@@ -26,18 +25,21 @@ const featured = ["Software", "Mobile", "E-Commerce", "Finance", "Health Care", 
       <h2 class="h2">Known endings</h2>
       <p class="lede">
         {closed} that closed and {cases.length - closed} that made it, each scored as of a date when its fate was still open.
-        The model called <span class="glow">{hits} of {cases.length}</span> correctly, close to a coin flip, which is roughly what a
-        modest model does on famous outliers.
+        The {caseStudies.model ?? "model"} calls <span class="glow">{hits} of {cases.length}</span> correctly; the logistic regression
+        it replaced called {structural.base.caseStudies.correctAt05}. Eight endings are too few to judge a model by, so the
+        benchmark below them is what decides.
       </p>
     </div>
-    <ol class="list" id="cases"></ol>
+    <ul class="tiles" id="cases"></ul>
     <script type="application/json" id="case-data" set:html={JSON.stringify(cases)}></script>
-    <details class="more" style="max-width: 1000px">
+    <details class="more" style="max-width: 1100px">
       <summary>How these were chosen and scored</summary>
       <p class="muted">
-        Founding dates, first funding rounds and outcomes were checked against the public sources linked in each row; dates known
+        Founding dates, first funding rounds and outcomes were checked against the public sources linked in each card; dates known
         only to the year are set to 1 July. Each startup is scored two years after its first round, or six months before it shut
         down if that came sooner, using only news from the two years before that date, the same shape as the training data.
+        The model is chosen by a cross-validated benchmark on all {structural.live ? "22,075" : ""} training startups, never by these eight:
+        the random forest reaches AUC {structural.live.aucMean.toFixed(3)} against {structural.base.aucMean.toFixed(3)} for logistic regression.
       </p>
     </details>
   </section>
@@ -45,58 +47,12 @@ const featured = ["Software", "Mobile", "E-Commerce", "Finance", "Health Care", 
   <section id="watchlist">
     <div class="head center">
       <h2 class="h2">The watchlist</h2>
-      <p class="lede">Well-known startups, re-checked against fresh Google News every six hours.</p>
+      <p class="lede">Well-known startups, re-checked every six hours against Google News and a growing GDELT news archive.</p>
     </div>
     <p class="status" id="watch-status" aria-live="polite">Loading the latest check…</p>
     <p class="offline center" hidden>The watchlist needs the Scala server. From <code>scala/</code>, run <code>sbt "runMain com.startupsurvival.web.Server"</code> and open <code>localhost:8080/startups/</code>.</p>
-    <ol class="list" id="watch-curated"></ol>
-    <h3 class="h3 center" style="margin-top: 96px; text-align: center">Added by visitors</h3>
-    <ol class="list" id="watch-visitors"></ol>
-  </section>
-
-  <section id="add">
-    <div class="head center">
-      <h2 class="h2">Add yours</h2>
-      <p class="lede">It goes through the same pipeline straight away and joins the watchlist.</p>
-    </div>
-    <form class="card" id="track-form" style="max-width: 720px; margin: 0 auto">
-      <div class="fields">
-        <div class="field full">
-          <label for="t-name">Company name</label>
-          <input id="t-name" name="name" required minlength="2" maxlength="60" placeholder="As it appears in the press" />
-        </div>
-        <div class="field">
-          <label for="t-founded">Founded</label>
-          <input id="t-founded" name="foundedAt" type="date" required />
-        </div>
-        <div class="field">
-          <label for="t-first">First funding round</label>
-          <input id="t-first" name="firstFundingAt" type="date" required />
-        </div>
-        <details class="inline full">
-          <summary>More details (optional)</summary>
-          <div class="fields">
-            <div class="field full">
-              <label for="t-country">Country</label>
-              <select id="t-country" name="country">
-                {model.countries.map((c) => <option selected={c === "USA"}>{c}</option>)}
-                <option value="">Somewhere else</option>
-              </select>
-            </div>
-            <fieldset class="chips full">
-              <legend>What does it do?</legend>
-              {featured.map((c) => <label class="chip"><input type="checkbox" name="categories" value={c} /><span>{c}</span></label>)}
-            </fieldset>
-            <div class="field full">
-              <label for="t-keywords">Known for, comma separated (helps when the name is an everyday word)</label>
-              <input id="t-keywords" name="keywords" maxlength="140" placeholder="A founder's name, a product" />
-            </div>
-          </div>
-        </details>
-      </div>
-      <div class="actions" style="justify-content: flex-start; margin-top: 24px"><button>Score and follow</button></div>
-      <p class="error" role="alert"></p>
-    </form>
+    <ul class="tiles" id="watch-curated"></ul>
+    <div class="actions"><a class="btn ghost" href="/archive/">See every startup, or suggest one</a></div>
   </section>
 
   <script>import "../scripts/startups.js";</script>

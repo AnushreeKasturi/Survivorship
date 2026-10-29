@@ -10,6 +10,7 @@ const { title, description, page } = Astro.props;
 const links = [
   ["/", "Overview", "home"],
   ["/startups/", "Startups", "startups"],
+  ["/archive/", "Archive", "archive"],
   ["/how-it-works/", "How it works", "how"],
 ];
 ---
@@ -31,7 +32,7 @@ const links = [
   <body data-page={page}>
     <a class="skip" href="#main">Skip to content</a>
     <header class="nav">
-      <a class="wordmark" href="/">Survivorship <i>.:*</i></a>
+      <a class="wordmark" href="/" aria-label="Survivorship, home"><span>Survivorship</span> <i>.:*</i></a>
       <nav aria-label="Pages">
         {links.map(([href, label, key]) => (
           <a href={href} aria-current={key === page ? "page" : undefined}>{label}</a>

@@ -1,6 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
-import { population, closedCount, cohortSize, model } from "../lib/data.js";
+import { population, closedCount, cohortSize, model, benchmark, structural } from "../lib/data.js";
 
 const steps = [
   ["question", "The question"],
@@ -136,11 +136,17 @@ const timeline = `founded ──── first round ──── ░░░░ 2 y
       <article class="step" id="models">
         <h2>The models</h2>
         <p>
-          Spark MLlib logistic regression and a linear SVM. Only 13% of startups closed, so an unweighted model learns to say
-          "operating" for everyone. Balanced class weights, computed from training rows only, make both outcomes count equally.
+          The research experiments use Spark MLlib logistic regression and a linear SVM. Only 13% of startups closed, so an
+          unweighted model learns to say "operating" for everyone. Balanced class weights, computed from training rows only, make
+          both outcomes count equally.
         </p>
         <pre class="formula">weight(class) = rows ÷ (2 × rows in that class)
 P(keeps going) = 1 ÷ (1 + e^−(b + w·x))</pre>
+        <p>
+          The live site scores with a random forest of {structural.live.name === "rf-100" ? "100" : ""} trees instead, because it won the benchmark below.
+          It is exported from Spark as plain JSON and evaluated by the Scala server, and the export is checked to match Spark's own
+          probabilities on real rows.
+        </p>
       </article>
 
       <article class="step" id="evaluation">
@@ -152,15 +158,35 @@ P(keeps going) = 1 ÷ (1 + e^−(b + w·x))</pre>
           <li>Feature sets are nested (leak-free, then plus coverage, then plus tone), so each step isolates one idea.</li>
         </ul>
         <p>News volume adds nothing; news tone adds about 0.01 AUC, which doesn't survive a correction for multiple tests. <a href="/#answer">See the numbers.</a></p>
+        <h3 class="h3" style="margin-top: 40px">The benchmark</h3>
+        <p>
+          Every change to the live model has to beat a fixed benchmark: the same five folds over all {population.toLocaleString("en-US")} startups,
+          leak-free features only, and a paired bootstrap against the current model. A change only counts if its gain's 95% interval is above zero.
+        </p>
+        <table class="bench">
+          <thead><tr><th>Model</th><th>AUC</th><th>vs logistic regression</th><th>Case studies</th></tr></thead>
+          <tbody>
+            {benchmark.candidates.map((c) => (
+              <tr class={c.name === "rf-100" ? "live" : ""}>
+                <td>{c.description.split(" (")[0].split(",")[0]}{c.name === "rf-100" ? " (live)" : ""}{c.name.includes("l2") ? ", stronger L2" : c.name === "rf" ? ", 200 trees" : c.name === "rf-100" ? ", 100 trees" : ""}</td>
+                <td>{c.aucMean.toFixed(3)}</td>
+                <td>{c.deltaAucVsBaseline ? `${c.deltaAucVsBaseline.delta >= 0 ? "+" : "−"}${Math.abs(c.deltaAucVsBaseline.delta).toFixed(3)} (${c.verdict})` : "baseline"}</td>
+                <td>{c.caseStudies.correctAt05} of {c.caseStudies.of}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p class="note">Run it with <code>sbt "runMain com.startupsurvival.ml.Benchmark"</code>; results are written to <code>results/benchmark.json</code>.</p>
       </article>
 
       <article class="step" id="platform">
         <h2>The live platform</h2>
         <p><code>web/Server.scala</code> serves this site and a small API backed by the same Scala code, in one Docker image on Render.</p>
         <ul>
-          <li><strong>Scoring</strong> on the overview page runs the leak-free model with today as the cutoff.</li>
-          <li><strong>The watchlist</strong> is re-checked every six hours: the last two years of Google News for each startup, matched, scored and run through both models. A GitHub Actions cron job wakes the free server so the schedule holds.</li>
-          <li><strong>Your startup</strong> is scored immediately and saved in a Render Key Value store, so it stays on the watchlist across restarts.</li>
+          <li><strong>Scoring</strong> on the overview page runs the random forest with today as the cutoff.</li>
+          <li><strong>News aggregation</strong> combines two sources. Google News RSS is searched per company; GDELT's free 15-minute bulk files, around 1,500 articles each from outlets worldwide, are read every six hours and every article that names a tracked startup is kept in a growing archive.</li>
+          <li><strong>The watchlist</strong> is re-checked every six hours: news from both sources, matched, scored and run through both models. A GitHub Actions cron job wakes the free server so the schedule holds.</li>
+          <li><strong>Suggestions</strong> join a queue, are scored at the next check, and stay in the <a href="/archive/">archive</a> with their score history, saved in a Render Key Value store.</li>
           <li><strong>Everyday-word names</strong> like Ramp get help on the live pages only: their news search is narrowed with a founder or product name, and a headline must spell the name exactly as the company does.</li>
           <li><strong>Established companies</strong> get a gentle warning. The model's weight on years since the first round is negative, so for a company long past its first round the score says more about age than about survival.</li>
         </ul>

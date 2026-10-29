@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 import scala.util.Try
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.jackson.JsonMethods.parse
-import org.json4s.jackson.Serialization.writePretty
+import org.json4s.jackson.Serialization.{write, writePretty}
 import com.startupsurvival.{NameMatcher, NewsCollector}
 import com.startupsurvival.spark.NewsRDD
 import Server.{Headline, Models, PredictRequest}
@@ -47,22 +47,29 @@ object Tracker {
     require(p.keywords.length <= 3 && p.keywords.forall(k => NamePattern.findFirstIn(k.trim).isDefined), "at most 3 keywords of 2-60 letters, digits or spaces")
   }
 
+  def key(name: String): String = NameMatcher.normalize(name)
+
+  /** Name-match confidence; profiles with keywords use the common-word rule. */
+  def matchConfidence(p: Profile, text: String): Double =
+    (if (p.keywords.nonEmpty) NameMatcher.confirmCommonWord(p.name, text) else NameMatcher.computeMatchConfidence(p.name, text)).confidence
+
   def loadProfiles(path: String): List[Profile] =
     parse(new String(Files.readAllBytes(Paths.get(path)), UTF_8)).extract[List[Profile]]
 
-  def check(p: Profile, asOf: LocalDate, models: Models, timeoutMs: Int, bounds: Server.Maturity = Server.Maturity.Design): Map[String, Any] = {
+  /** Scores a profile as of `asOf` from Google News plus any archived GDELT articles in the same two-year window. */
+  def check(p: Profile, asOf: LocalDate, models: Models, timeoutMs: Int, bounds: Server.Maturity = Server.Maturity.Design,
+      archive: Option[NewsArchive] = None): Map[String, Any] = {
     val fetched = NewsCollector.fetchUrl(NewsCollector.buildRssUrl(p.name, asOf, p.keywords), timeoutMs)
-    val scoped = p.keywords.nonEmpty
-    def confidence(text: String) =
-      (if (scoped) NameMatcher.confirmCommonWord(p.name, text) else NameMatcher.computeMatchConfidence(p.name, text)).confidence
     val windowStart = asOf.minusMonths(24)
-    val raw = fetched.toOption.toList.flatMap(NewsCollector.parseRssItems).flatMap { item =>
+    val google = fetched.toOption.toList.flatMap(NewsCollector.parseRssItems).flatMap { item =>
       NewsCollector.parsePubDate(item.pubDateRaw)
         .filter(d => d.isBefore(asOf) && !d.isBefore(windowStart))
         .map(d => (d, NewsRDD.stripSourceSuffix(item.title, item.source.getOrElse(""))))
     }
+    val gdelt = archive.toList.flatMap(_.articlesFor(p, windowStart, asOf)).map(a => (LocalDate.parse(a.date), a.title))
+    val raw = google ++ gdelt
     val accepted = raw
-      .filter { case (_, text) => confidence(text) >= NameMatcher.AcceptanceThreshold }
+      .filter { case (_, text) => matchConfidence(p, text) >= NameMatcher.AcceptanceThreshold }
       .groupBy(_._2.toLowerCase).values.map(_.minBy(_._1.toEpochDay)) // Google repeats titles across outlets
       .toList.sortBy(_._1.toEpochDay)
       .takeRight(50)
@@ -76,7 +83,8 @@ object Tracker {
       "checkedAt" -> Instant.now().toString,
       "rawHeadlines" -> raw.size,
       "ambiguousName" -> NameMatcher.isAmbiguousName(p.name),
-      "scopedSearch" -> scoped,
+      "scopedSearch" -> p.keywords.nonEmpty,
+      "sources" -> Map("googleNews" -> google.size, "gdelt" -> gdelt.size),
       "newsError" -> fetched.failed.toOption.map(e => s"${e.getClass.getSimpleName}: ${e.getMessage}")
     )
   }
@@ -94,105 +102,158 @@ object Tracker {
       .getOrElse(twoYearsIn)
   }
 
-  /** The live watchlist: curated startups plus visitor-added ones, re-checked on a schedule. */
-  final class Watch(models: Models, curated: List[Profile], bounds: Server.Maturity, store: Option[Store], periodHours: Int = 6) {
-    // Visitor profiles persist in the key-value store when KV_URL is set; their scores are recomputed on each run.
-    private val StoreKey = "startup-survival:watchlist:visitors" // namespaced: the store is shared with another project
+  final case class Point(checkedAt: String, financialOnly: Double, financialSentiment: Option[Double], headlines: Int)
+  final case class Queued(profile: Profile, queuedAt: String)
+
+  /**
+   * The live watchlist: curated startups plus visitor suggestions. Visitors
+   * suggest a startup, it waits in a queue, and the next run scores it and
+   * moves it into the archive; every score is kept as history. GDELT is read
+   * into the news archive before each scheduled run.
+   */
+  final class Watch(models: Models, curated: List[Profile], bounds: Server.Maturity, store: Option[Store],
+      archive: NewsArchive, periodHours: Int = 6) {
+    // Keys are namespaced: the key-value store is shared with another project.
+    private val VisitorsKey = "startup-survival:watchlist:visitors"
+    private val QueueKey = "startup-survival:watchlist:queue"
+    private val HistoryKey = "startup-survival:watchlist:history"
     private val visitors = new ConcurrentHashMap[String, Profile]()
     private val visitorOrder = new java.util.concurrent.ConcurrentLinkedQueue[String]()
+    private val queue = new java.util.concurrent.ConcurrentLinkedQueue[Queued]()
     private val results = new ConcurrentHashMap[String, Map[String, Any]]()
+    private val history = new ConcurrentHashMap[String, Vector[Point]]()
     private val lastSubmit = new ConcurrentHashMap[String, java.lang.Long]()
     @volatile private var lastRun: Option[Instant] = None
     @volatile private var running = false
-    private val MaxVisitors = 25
+    private val MaxVisitors = 50
+    private val MaxQueue = 25
+    private val MaxHistory = 120 // a month of 6-hourly checks
     private val SubmitGapMs = 20000L
     private val GlobalGapMs = 3000L // across all clients, in case client identity is spoofed
     @volatile private var lastAnySubmit = 0L
 
-    private def key(name: String) = NameMatcher.normalize(name)
-
-    private def score(p: Profile, timeoutMs: Int): Map[String, Any] =
-      Try(check(p, LocalDate.now(), models, timeoutMs, bounds))
-        .getOrElse(Map("profile" -> p, "error" -> "could not score this profile"))
-
-    private def runOne(p: Profile, timeoutMs: Int): Unit = results.put(key(p.name), score(p, timeoutMs))
-
-    def refresh(): Unit = {
-      running = true
-      try { (curated ++ visitors.values.asScala).foreach { p => runOne(p, 8000); Thread.sleep(1000) } } // gentle on Google News
-      finally { running = false; lastRun = Some(Instant.now()) }
+    private def save(): Unit = store.foreach { kv =>
+      Try {
+        kv.set(VisitorsKey, write(visitorOrder.asScala.toList.flatMap(k => Option(visitors.get(k)))))
+        kv.set(QueueKey, write(queue.asScala.toList))
+        kv.set(HistoryKey, write(history.asScala.toMap))
+      }.failed.foreach(e => println(s"[WARN] could not save the watchlist: ${e.getMessage}"))
     }
 
-    private def save(): Unit = store.foreach { kv =>
-      val ordered = visitorOrder.asScala.toList.flatMap(k => Option(visitors.get(k)))
-      Try(kv.set(StoreKey, org.json4s.jackson.Serialization.write(ordered)))
-        .failed.foreach(e => println(s"[WARN] could not save visitors: ${e.getMessage}"))
+    private def restore(): Unit = store.foreach { kv =>
+      Try {
+        kv.get(VisitorsKey).toList.flatMap(j => parse(j).extract[List[Profile]]).takeRight(MaxVisitors)
+          .foreach { p => if (visitors.put(key(p.name), p) == null) visitorOrder.add(key(p.name)) }
+        kv.get(QueueKey).toList.flatMap(j => parse(j).extract[List[Queued]]).foreach(queue.add)
+        kv.get(HistoryKey).foreach(j => parse(j).extract[Map[String, List[Point]]].foreach { case (k, v) => history.put(k, v.toVector) })
+        println(s"Restored ${visitors.size} visitor startups and ${queue.size} queued from the key-value store")
+      }.failed.foreach(e => println(s"[WARN] key-value store unavailable, starting empty: ${e.getMessage}"))
+    }
+
+    /** Scores one profile now; keeps the result and appends it to that startup's history. */
+    private def runOne(p: Profile, timeoutMs: Int): Map[String, Any] = {
+      val r = Try(check(p, LocalDate.now(), models, timeoutMs, bounds, Some(archive)))
+        .getOrElse(Map("profile" -> p, "error" -> "could not score this profile"))
+      results.put(key(p.name), r)
+      if (!r.contains("error")) {
+        val point = Point(r("checkedAt").toString, r("financialOnly").asInstanceOf[Double],
+          r("financialSentiment").asInstanceOf[Option[Double]], r("headlines").asInstanceOf[List[_]].size)
+        history.put(key(p.name), (history.getOrDefault(key(p.name), Vector.empty) :+ point).takeRight(MaxHistory))
+      }
+      r
+    }
+
+    /** Moves queued suggestions into the archive by scoring them. */
+    def drainQueue(): Unit = synchronized {
+      if (!queue.isEmpty) println(s"Scoring ${queue.size} queued suggestion(s)")
+      var moved = false
+      Iterator.continually(queue.poll()).takeWhile(_ != null).foreach { q =>
+        runOne(q.profile, 8000)
+        if (visitors.put(key(q.profile.name), q.profile) == null) visitorOrder.add(key(q.profile.name))
+        while (visitors.size > MaxVisitors) Option(visitorOrder.poll()).foreach { o => visitors.remove(o); results.remove(o) }
+        moved = true
+        Thread.sleep(1000)
+      }
+      if (moved) save()
+    }
+
+    def refresh(): Unit = synchronized {
+      running = true
+      try {
+        val tracked = curated ++ visitors.values.asScala ++ queue.asScala.map(_.profile)
+        Try(archive.ingest(tracked)).failed.foreach(e => println(s"[WARN] GDELT ingest failed: ${e.getMessage}"))
+        drainQueue()
+        (curated ++ visitors.values.asScala).foreach { p => runOne(p, 8000); Thread.sleep(1000) } // gentle on Google News
+        save()
+      } finally { running = false; lastRun = Some(Instant.now()) }
     }
 
     def start(): Unit = {
-      store.foreach { kv =>
-        Try(kv.get(StoreKey).toList.flatMap(json => parse(json).extract[List[Profile]])) match {
-          case scala.util.Success(saved) =>
-            saved.takeRight(MaxVisitors).foreach { p => visitors.put(key(p.name), p); visitorOrder.add(key(p.name)) }
-            println(s"Restored ${saved.size} visitor startups from the key-value store")
-          case scala.util.Failure(e) => println(s"[WARN] key-value store unavailable, visitors start empty: ${e.getMessage}")
-        }
-      }
-      val scheduler = Executors.newSingleThreadScheduledExecutor()
+      restore()
+      archive.restore()
+      val scheduler = Executors.newScheduledThreadPool(2)
       scheduler.scheduleAtFixedRate(() => Try(refresh()), 0, periodHours.toLong, TimeUnit.HOURS)
+      // Suggestions shouldn't wait six hours while the server is awake.
+      val every = sys.env.get("QUEUE_MINUTES").flatMap(m => Try(m.toLong).toOption).getOrElse(10L)
+      scheduler.scheduleAtFixedRate(() => Try(drainQueue()).failed.foreach(e => println(s"[WARN] queue: $e")), every, every, TimeUnit.MINUTES)
     }
 
     def snapshot: Map[String, Any] = {
-      def ordered(ps: Seq[Profile]) = ps.flatMap(p => Option(results.get(key(p.name))))
+      def withHistory(ps: Seq[Profile]) = ps.flatMap(p => Option(results.get(key(p.name))).map(_ + ("history" -> history.getOrDefault(key(p.name), Vector.empty))))
       Map(
         "lastRun" -> lastRun.map(_.toString),
         "nextRun" -> lastRun.map(_.plusSeconds(periodHours * 3600L).toString),
         "running" -> running,
         "periodHours" -> periodHours,
-        "curated" -> ordered(curated),
-        "visitors" -> ordered(visitors.values.asScala.toSeq.sortBy(_.name.toLowerCase))
+        "threshold" -> models.threshold,
+        "model" -> models.structuralName,
+        "curated" -> withHistory(curated),
+        "visitors" -> withHistory(visitorOrder.asScala.toList.reverse.flatMap(k => Option(visitors.get(k)))),
+        "queue" -> queue.asScala.toList,
+        "news" -> archive.stats
       )
     }
 
-    /** Scores a visitor's startup now and adds it to the scheduled list. */
-    def track(p: Profile, client: String): Map[String, Any] = {
+    /** Queues a visitor's suggestion; the next run scores it. */
+    def suggest(p: Profile, client: String): Map[String, Any] = {
       validate(p)
+      val profile = p.copy(name = p.name.trim, outcome = None, outcomeDate = None, note = None, sources = Nil)
+      // Dates are checked the way scoring will check them, so a bad one is a 400 now, not a failure later.
+      Server.predict(PredictRequest(profile.foundedAt, profile.firstFundingAt, Some(profile.categories), profile.country, None), models)
       val now = System.currentTimeMillis()
       lastSubmit.entrySet.removeIf(_.getValue < now - SubmitGapMs) // keeps the map to recent clients only
       val last = Option(lastSubmit.put(client.take(64), now)).map(_.longValue).getOrElse(0L)
       require(now - last > SubmitGapMs, "one startup every 20 seconds, please try again shortly")
       synchronized {
-        require(now - lastAnySubmit > GlobalGapMs, "the server is busy scoring another startup, please try again in a few seconds")
+        require(now - lastAnySubmit > GlobalGapMs, "another suggestion just arrived, please try again in a few seconds")
         lastAnySubmit = now
       }
-      val profile = p.copy(name = p.name.trim, outcome = None, outcomeDate = None, note = None, sources = Nil)
       val k = key(profile.name)
-      require(curated.forall(c => key(c.name) != k), s"${profile.name} is already on the watchlist")
-      // Bad dates throw here and reach the visitor as a 400; news failures are recorded in the result.
-      val result = check(profile, LocalDate.now(), models, 4000, bounds) // under the server's 10s response limit
-      if (visitors.put(k, profile) == null) visitorOrder.add(k)
-      results.put(k, result)
-      while (visitors.size > MaxVisitors) Option(visitorOrder.poll()).foreach { o => visitors.remove(o); results.remove(o) }
+      require(curated.forall(c => key(c.name) != k) && !visitors.containsKey(k) && queue.asScala.forall(q => key(q.profile.name) != k),
+        s"${profile.name} is already in the archive")
+      require(queue.size < MaxQueue, "the queue is full, please try again after the next check")
+      queue.add(Queued(profile, Instant.now().toString))
       save()
-      result
+      Map("queued" -> true, "position" -> queue.size, "profile" -> profile)
     }
   }
 
   def main(args: Array[String]): Unit = {
-    val models = Server.loadModels(args.lift(0).getOrElse("../results/model_coefficients_leakfree.json"))
+    val models = Server.loadModels(args.lift(0).getOrElse("../results/model_coefficients_leakfree.json"), Some("../results/model_structural.json"))
     val cases = loadProfiles(args.lift(1).getOrElse("../startups/case_studies.json"))
     val scored = cases.map { p =>
       val r = check(p, caseStudyAsOf(p), models, 10000)
       Thread.sleep(1500)
       val p0 = r("financialOnly").asInstanceOf[Double]
-      val correct = (p0 >= 0.5) == p.outcome.contains("operating")
+      val correct = (p0 >= models.threshold) == p.outcome.contains("operating")
       println(f"${p.name}%-10s as of ${r("asOf")}  P(operating)=$p0%.3f  actual=${p.outcome.getOrElse("?")}%-9s " +
         f"${if (correct) "hit" else "miss"}  news ${r("rawHeadlines")} raw / ${r("headlines").asInstanceOf[List[_]].size} matched")
       r + ("correct" -> correct)
     }
     val out = new File(args.lift(2).getOrElse("../results/case_studies.json"))
     val w = new PrintWriter(out, "UTF-8")
-    try w.println(writePretty(Map("generatedAt" -> Instant.now().toString, "threshold" -> 0.5, "cases" -> scored)))
+    try w.println(writePretty(Map("generatedAt" -> Instant.now().toString, "threshold" -> models.threshold,
+      "model" -> models.structuralName, "cases" -> scored)))
     finally w.close()
     println(s"${scored.count(_("correct") == true)} of ${scored.size} correct; wrote $out")
   }

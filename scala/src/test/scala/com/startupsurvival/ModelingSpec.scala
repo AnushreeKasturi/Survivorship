@@ -164,4 +164,20 @@ class ModelingSpec extends AnyFunSuite {
     assert(m.describe(6.0)("level") == "older")
     assert(m.describe(15.0)("level") == "established")
   }
+
+  test("structural forest: features match FeatureSets, scores are probabilities, threshold is exported") {
+    val models = com.startupsurvival.web.Server.loadModels("../results/model_coefficients_leakfree.json", Some("../results/model_structural.json"))
+    assert(models.structural.isDefined && models.structuralName.startsWith("random forest"))
+    val x = com.startupsurvival.spark.FeatureSets.financialSafeArray(models.vocab)(
+      FinancialFeatureExtractor.extractFinancialFeatures(startup()))
+    val p = models.structuralProbability(x)
+    assert(p > 0 && p < 1 && models.threshold > 0.3 && models.threshold < 0.7)
+  }
+
+  test("forest evaluation follows splits left when x <= threshold") {
+    import com.startupsurvival.web.Forest
+    val f = Forest(List("a"), Nil, Nil, 0.5, Vector(Forest.Split(0, 1.0, Forest.Leaf(0.2), Forest.Leaf(0.8)), Forest.Leaf(0.6)))
+    assert(math.abs(f.probability(Array(1.0)) - 0.4) < 1e-12)
+    assert(math.abs(f.probability(Array(1.5)) - 0.7) < 1e-12)
+  }
 }

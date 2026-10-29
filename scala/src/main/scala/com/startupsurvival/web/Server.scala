@@ -31,8 +31,17 @@ object Server {
       1.0 / (1.0 + math.exp(-(intercept + features.map(_.coefficient).zip(x).map { case (w, v) => w * v }.sum)))
     }
   }
-  final case class Models(categories: List[String], countries: List[String], financialOnly: LrModel, financialSentiment: LrModel) {
+  /**
+   * The live models. `structural`, when exported by ml.Benchmark, is the random
+   * forest that beat logistic regression on the benchmark; it scores the
+   * structural (no-news) probability and sets the decision threshold.
+   */
+  final case class Models(categories: List[String], countries: List[String], financialOnly: LrModel, financialSentiment: LrModel,
+      structural: Option[Forest] = None) {
     val vocab = FeatureSets.Vocab(categories.toArray, countries.toArray)
+    def structuralProbability(x: Array[Double]): Double = structural.fold(financialOnly.probability(x))(_.probability(x))
+    def threshold: Double = structural.fold(0.5)(_.threshold)
+    def structuralName: String = structural.fold("logistic regression")(f => s"random forest, ${f.trees.size} trees")
 
     /** Fails at startup if the JSON's feature order drifts from FeatureSets'. */
     def checkFeatureOrder(): Unit = {
@@ -112,13 +121,7 @@ object Server {
     val headlines = req.headlines.getOrElse(Nil).filter(_.text.trim.nonEmpty)
     require(headlines.length <= MaxHeadlines, s"at most $MaxHeadlines headlines")
 
-    val financial = FinancialFeatureExtractor.extractFinancialFeatures(StartupRecord(
-      permalink = "/demo", name = "demo", homepageUrl = None,
-      categoryList = Some(categories.mkString("|")).filter(_.nonEmpty), countryCode = req.country.map(_.trim).filter(_.nonEmpty),
-      stateCode = None, region = None, city = None, fundingTotalUsd = None, fundingRounds = None,
-      foundedAt = founded, firstFundingAt = firstFunding, lastFundingAt = None,
-      label = 1, predictionCutoff = cutoff
-    ))
+    val financial = financialFeatures(founded, firstFunding, categories, req.country, cutoff)
     val scored = headlines.map { h =>
       SentimentScorer.scoreNews(NewsRecord(h.text, Some(date("headline date", h.date)), None, None, cutoff, Some("/demo"), 1.0, None))
     }
@@ -127,7 +130,9 @@ object Server {
     val withNews = safe ++ FeatureSets.coverageArray(sentimentFeatures) ++ FeatureSets.toneArray(sentimentFeatures)
 
     Map(
-      "financialOnly" -> models.financialOnly.probability(safe),
+      "financialOnly" -> models.structuralProbability(safe),
+      "threshold" -> models.threshold,
+      "model" -> models.structuralName,
       "financialSentiment" -> (if (scored.isEmpty) None else Some(models.financialSentiment.probability(withNews))),
       "financial" -> financial,
       "maturity" -> bounds.describe(financial.yearsSinceFirstFunding),
@@ -136,10 +141,26 @@ object Server {
     )
   }
 
-  def loadModels(path: String): Models = {
-    val models = parse(new String(Files.readAllBytes(Paths.get(path)), UTF_8)).extract[Models]
-    models.checkFeatureOrder()
-    models
+  /** A profile's known-at-cutoff facts as the same FinancialFeatures training used. */
+  def financialFeatures(founded: LocalDate, firstFunding: LocalDate, categories: List[String], country: Option[String],
+      cutoff: LocalDate): com.startupsurvival.models.FinancialFeatures =
+    FinancialFeatureExtractor.extractFinancialFeatures(StartupRecord(
+      permalink = "/demo", name = "demo", homepageUrl = None,
+      categoryList = Some(categories.mkString("|")).filter(_.nonEmpty), countryCode = country.map(_.trim).filter(_.nonEmpty),
+      stateCode = None, region = None, city = None, fundingTotalUsd = None, fundingRounds = None,
+      foundedAt = founded, firstFundingAt = firstFunding, lastFundingAt = None,
+      label = 1, predictionCutoff = cutoff
+    ))
+
+  def loadModels(path: String, structuralPath: Option[String] = None): Models = {
+    val lr = parse(new String(Files.readAllBytes(Paths.get(path)), UTF_8)).extract[Models]
+    lr.checkFeatureOrder()
+    val forest = structuralPath.filter(p => Files.exists(Paths.get(p))).map(Forest.load)
+    forest.foreach { f =>
+      require(f.categories == lr.categories && f.countries == lr.countries && f.features == FeatureSets.safeFeatureNames(lr.vocab).toList,
+        "structural model's features do not match the leak-free feature set")
+    }
+    lr.copy(structural = forest)
   }
 
   private def send(ex: HttpExchange, status: Int, contentType: String, body: Array[Byte]): Unit = {
@@ -202,7 +223,8 @@ object Server {
     val port = sys.env.getOrElse("PORT", "8080").toInt
     val siteRoot = Paths.get(sys.env.getOrElse("SITE_DIR", "../web/dist")).toAbsolutePath.normalize()
     val modelsPath = sys.env.getOrElse("MODEL_COEFFICIENTS", "../results/model_coefficients_leakfree.json")
-    val models = loadModels(modelsPath)
+    val models = loadModels(modelsPath, Some(sys.env.getOrElse("STRUCTURAL_MODEL", "../results/model_structural.json")))
+    println(s"Structural model: ${models.structuralName}, threshold ${models.threshold}")
     // Warm up before taking traffic: on a 0.1-CPU host the first cold request otherwise outlasts the 10s timeout.
     write(predict(PredictRequest("2020-01-01", "2020-06-01", Some(List("Software")), Some("USA"),
       Some(List(Headline("2020-07-01", "Acme raises funding")))), models))
@@ -217,11 +239,12 @@ object Server {
     server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(8))
     val bounds = Maturity.load(sys.env.getOrElse("FEATURE_RANGES", "../results/feature_ranges.json"))
     val store = sys.env.get("KV_URL").filter(_.nonEmpty).map(new Store(_))
-    val watch = new Tracker.Watch(models, Tracker.loadProfiles(sys.env.getOrElse("WATCHLIST", "../startups/watchlist.json")), bounds, store)
+    val watch = new Tracker.Watch(models, Tracker.loadProfiles(sys.env.getOrElse("WATCHLIST", "../startups/watchlist.json")), bounds, store,
+      new NewsArchive(store))
     api(server, "/api/predict")((_, body) => predict(parse(body).extract[PredictRequest], models, LocalDate.now(), bounds))
     api(server, "/api/sentiment")((_, body) => sentiment(parse(body).extract[SentimentRequest].headline))
     api(server, "/api/watchlist", "GET")((_, _) => watch.snapshot)
-    api(server, "/api/track")((ex, body) => watch.track(parse(body).extract[Tracker.Profile], client(ex)))
+    api(server, "/api/track")((ex, body) => watch.suggest(parse(body).extract[Tracker.Profile], client(ex)))
     api(server, "/api/match") { (_, body) =>
       val req = parse(body).extract[MatchRequest]
       NameMatcher.computeMatchConfidence(req.name, req.headline)
