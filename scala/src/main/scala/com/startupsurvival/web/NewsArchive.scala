@@ -48,6 +48,7 @@ final class NewsArchive(store: Option[Store]) {
     val floor = Gdelt.slot(now.minus(Duration.ofHours(24)))
     var slot = Gdelt.slot(cursor.map(_.plus(Duration.ofMinutes(15))).filter(_.isAfter(floor)).getOrElse(now.minus(Duration.ofHours(6))))
     val lower = profiles.map(p => (Tracker.key(p.name), p, p.name.toLowerCase))
+    articles.keySet.retainAll(lower.map(_._1).toSet.asJava) // only startups still being tracked
     var files, matched, published = 0
     var stop = false
     while (!stop && files < maxFiles && slot.isBefore(now)) {
@@ -75,6 +76,8 @@ final class NewsArchive(store: Option[Store]) {
     lastIngest = Map("at" -> now.toString, "filesRead" -> published, "articlesMatched" -> matched)
     save()
   }
+
+  def forget(key: String): Unit = articles.remove(key)
 
   /** Archived articles for a startup published inside [from, to). */
   def articlesFor(p: Profile, from: LocalDate, to: LocalDate): Seq[Gdelt.Article] =

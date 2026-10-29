@@ -130,7 +130,8 @@ object Tracker {
     private val MaxHistory = 120 // a month of 6-hourly checks
     private val SubmitGapMs = 20000L
     private val GlobalGapMs = 3000L // across all clients, in case client identity is spoofed
-    @volatile private var lastAnySubmit = 0L
+    private val lastAnySubmit = new java.util.concurrent.atomic.AtomicLong(0L)
+    private val jobLock = new Object // background jobs only; request handlers never wait on news I/O
 
     private def save(): Unit = store.foreach { kv =>
       Try {
@@ -164,20 +165,25 @@ object Tracker {
     }
 
     /** Moves queued suggestions into the archive by scoring them. */
-    def drainQueue(): Unit = synchronized {
+    private def evictOldVisitors(): Unit =
+      while (visitors.size > MaxVisitors) Option(visitorOrder.poll()).foreach { o =>
+        visitors.remove(o); results.remove(o); history.remove(o); archive.forget(o)
+      }
+
+    def drainQueue(): Unit = jobLock.synchronized {
       if (!queue.isEmpty) println(s"Scoring ${queue.size} queued suggestion(s)")
       var moved = false
       Iterator.continually(queue.poll()).takeWhile(_ != null).foreach { q =>
         runOne(q.profile, 8000)
         if (visitors.put(key(q.profile.name), q.profile) == null) visitorOrder.add(key(q.profile.name))
-        while (visitors.size > MaxVisitors) Option(visitorOrder.poll()).foreach { o => visitors.remove(o); results.remove(o) }
+        evictOldVisitors()
         moved = true
         Thread.sleep(1000)
       }
       if (moved) save()
     }
 
-    def refresh(): Unit = synchronized {
+    def refresh(): Unit = jobLock.synchronized {
       running = true
       try {
         val tracked = curated ++ visitors.values.asScala ++ queue.asScala.map(_.profile)
@@ -224,10 +230,9 @@ object Tracker {
       lastSubmit.entrySet.removeIf(_.getValue < now - SubmitGapMs) // keeps the map to recent clients only
       val last = Option(lastSubmit.put(client.take(64), now)).map(_.longValue).getOrElse(0L)
       require(now - last > SubmitGapMs, "one startup every 20 seconds, please try again shortly")
-      synchronized {
-        require(now - lastAnySubmit > GlobalGapMs, "another suggestion just arrived, please try again in a few seconds")
-        lastAnySubmit = now
-      }
+      val previous = lastAnySubmit.get()
+      require(now - previous > GlobalGapMs && lastAnySubmit.compareAndSet(previous, now),
+        "another suggestion just arrived, please try again in a few seconds")
       val k = key(profile.name)
       require(curated.forall(c => key(c.name) != k) && !visitors.containsKey(k) && queue.asScala.forall(q => key(q.profile.name) != k),
         s"${profile.name} is already in the archive")
