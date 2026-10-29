@@ -132,14 +132,17 @@ object Tracker {
     private val GlobalGapMs = 3000L // across all clients, in case client identity is spoofed
     private val lastAnySubmit = new java.util.concurrent.atomic.AtomicLong(0L)
     private val jobLock = new Object // background jobs only; request handlers never wait on news I/O
+    // Guards every change to visitors, queue and history, and the save, so concurrent
+    // writers can't interleave. Slow news I/O always happens outside it.
+    private val stateLock = new Object
 
-    private def save(): Unit = store.foreach { kv =>
+    private def save(): Unit = stateLock.synchronized { store.foreach { kv =>
       Try {
         kv.set(VisitorsKey, write(visitorOrder.asScala.toList.flatMap(k => Option(visitors.get(k)))))
         kv.set(QueueKey, write(queue.asScala.toList))
         kv.set(HistoryKey, write(history.asScala.toMap))
       }.failed.foreach(e => println(s"[WARN] could not save the watchlist: ${e.getMessage}"))
-    }
+    } }
 
     private def restore(): Unit = store.foreach { kv =>
       Try {
@@ -159,7 +162,9 @@ object Tracker {
       if (!r.contains("error")) {
         val point = Point(r("checkedAt").toString, r("financialOnly").asInstanceOf[Double],
           r("financialSentiment").asInstanceOf[Option[Double]], r("headlines").asInstanceOf[List[_]].size)
-        history.put(key(p.name), (history.getOrDefault(key(p.name), Vector.empty) :+ point).takeRight(MaxHistory))
+        stateLock.synchronized {
+          history.put(key(p.name), (history.getOrDefault(key(p.name), Vector.empty) :+ point).takeRight(MaxHistory))
+        }
       }
       r
     }
@@ -172,15 +177,17 @@ object Tracker {
 
     def drainQueue(): Unit = jobLock.synchronized {
       if (!queue.isEmpty) println(s"Scoring ${queue.size} queued suggestion(s)")
-      var moved = false
-      Iterator.continually(queue.poll()).takeWhile(_ != null).foreach { q =>
+      // Peek, score outside the lock, then move it out of the queue: a suggestion is never lost mid-score.
+      Iterator.continually(stateLock.synchronized(Option(queue.peek()))).takeWhile(_.isDefined).map(_.get).foreach { q =>
         runOne(q.profile, 8000)
-        if (visitors.put(key(q.profile.name), q.profile) == null) visitorOrder.add(key(q.profile.name))
-        evictOldVisitors()
-        moved = true
+        stateLock.synchronized {
+          queue.remove(q)
+          if (visitors.put(key(q.profile.name), q.profile) == null) visitorOrder.add(key(q.profile.name))
+          evictOldVisitors()
+          save()
+        }
         Thread.sleep(1000)
       }
-      if (moved) save()
     }
 
     def refresh(): Unit = jobLock.synchronized {
@@ -234,12 +241,15 @@ object Tracker {
       require(now - previous > GlobalGapMs && lastAnySubmit.compareAndSet(previous, now),
         "another suggestion just arrived, please try again in a few seconds")
       val k = key(profile.name)
-      require(curated.forall(c => key(c.name) != k) && !visitors.containsKey(k) && queue.asScala.forall(q => key(q.profile.name) != k),
-        s"${profile.name} is already in the archive")
-      require(queue.size < MaxQueue, "the queue is full, please try again after the next check")
-      queue.add(Queued(profile, Instant.now().toString))
-      save()
-      Map("queued" -> true, "position" -> queue.size, "profile" -> profile)
+      val position = stateLock.synchronized { // check and add atomically
+        require(curated.forall(c => key(c.name) != k) && !visitors.containsKey(k) && queue.asScala.forall(q => key(q.profile.name) != k),
+          s"${profile.name} is already in the archive")
+        require(queue.size < MaxQueue, "the queue is full, please try again after the next check")
+        queue.add(Queued(profile, Instant.now().toString))
+        save()
+        queue.size
+      }
+      Map("queued" -> true, "position" -> position, "profile" -> profile)
     }
   }
 
