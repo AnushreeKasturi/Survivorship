@@ -1,7 +1,7 @@
 # Evaluating the Predictive Value of Public News Sentiment for Startup Survival
 
-[![CI](https://img.shields.io/github/actions/workflow/status/AnushreeKasturi/bda_endsem/scala.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/AnushreeKasturi/bda_endsem/actions/workflows/scala.yml)
-[![Watchlist refresh](https://img.shields.io/github/actions/workflow/status/AnushreeKasturi/bda_endsem/watchlist.yml?branch=main&label=watchlist&logo=githubactions&logoColor=white)](https://github.com/AnushreeKasturi/bda_endsem/actions/workflows/watchlist.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/AnushreeKasturi/Survivorship/scala.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/AnushreeKasturi/Survivorship/actions/workflows/scala.yml)
+[![Watchlist refresh](https://img.shields.io/github/actions/workflow/status/AnushreeKasturi/Survivorship/watchlist.yml?branch=main&label=watchlist&logo=githubactions&logoColor=white)](https://github.com/AnushreeKasturi/Survivorship/actions/workflows/watchlist.yml)
 [![Live demo](https://img.shields.io/badge/live%20demo-onrender.com-3b55e6?logo=render&logoColor=white)](https://startup-survival-demo.onrender.com)
 [![License: MIT](https://img.shields.io/badge/license-MIT-0f9e92)](LICENSE)
 [![Scala 2.12](https://img.shields.io/badge/Scala-2.12.18-DC322F?logo=scala&logoColor=white)](scala/build.sbt)

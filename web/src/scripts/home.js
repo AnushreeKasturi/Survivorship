@@ -15,6 +15,14 @@ gsap.matchMedia().add("(min-width: 901px) and (prefers-reduced-motion: no-prefer
     .from("#flow .flow-notes p", { opacity: 0, stagger: 0.3 }, "<0.6");
 });
 
+// ScrollTrigger measures the page once; opening "See the numbers" or a form
+// section makes it taller and would leave the pin in its old place.
+let pending = 0;
+new ResizeObserver(() => {
+  cancelAnimationFrame(pending);
+  pending = requestAnimationFrame(() => ScrollTrigger.refresh());
+}).observe(document.querySelector("main"));
+
 // ---------- predictor ----------
 
 const parseHeadlines = (text) => (text || "").split("\n")
