@@ -50,6 +50,17 @@ them. Company registries can, for free, and they give real survival labels:
 These are candidate sources; check each one's licence, coverage and access
 before building on it.
 
+### Which news counts
+
+Naming a company is not the same as being news about it. The live pages pass
+every name-matched headline through `NewsRelevance`, which keeps only
+headlines reporting a business event and drops reviews, product and toy
+listings, how-tos, "statistics" pages and social sites. On the case studies it
+removed all 30 "Figma" headlines (toy figures) and 76 of Quibi's 98 (reviews
+of its shows). The news model's tone weights were learned before this filter
+existed, so the next step is to re-run the batch news through it
+(`NewsRDD.matchAndScore`) and retrain, then let the benchmark decide.
+
 ### Matching articles to companies
 
 Name-only matching is the weakest link (29% strict precision in our audit).

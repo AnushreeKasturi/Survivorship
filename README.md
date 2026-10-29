@@ -156,6 +156,10 @@ URL) to keep suggestions, history and the news archive across restarts.
 
 Two live-only adjustments, never used in training:
 
+- **Business news only:** a headline that names the company only counts if
+  `NewsRelevance` judges it business news (an event such as funding, revenue,
+  hiring, a deal, a lawsuit or a shutdown), not a review, listing, how-to or
+  social post. The evidence on each card lists what was set aside and why.
 - **Everyday-word names** (Ramp, Notion, Stripe): profiles can list `keywords`
   (a founder, a product). The news search is narrowed with them, and a
   headline must spell the name exactly as the company does.

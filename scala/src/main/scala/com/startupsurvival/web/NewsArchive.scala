@@ -7,7 +7,7 @@ import scala.util.{Failure, Success, Try}
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.jackson.JsonMethods.parse
 import org.json4s.jackson.Serialization.write
-import com.startupsurvival.NameMatcher
+import com.startupsurvival.{NameMatcher, NewsRelevance}
 import Tracker.Profile
 
 /**
@@ -56,7 +56,8 @@ final class NewsArchive(store: Option[Store]) {
         val title = a.title.toLowerCase
         lower.foreach { case (k, p, name) =>
           // cheap substring test first; the full matcher only runs on likely hits
-          if (title.contains(name) && Tracker.matchConfidence(p, a.title) >= NameMatcher.AcceptanceThreshold) {
+          if (title.contains(name) && Tracker.matchConfidence(p, a.title) >= NameMatcher.AcceptanceThreshold &&
+              NewsRelevance.judge(a.title, a.source).keep) {
             val existing = articles.getOrDefault(k, Vector.empty)
             if (!existing.exists(e => e.url == a.url || e.title.equalsIgnoreCase(a.title))) {
               articles.put(k, (existing :+ a).takeRight(PerStartup))

@@ -31,9 +31,9 @@ function sparkline(points) {
 function newsLine(r) {
   if (r.newsError) return "The Google News search failed this time; archived news and the structural model still ran.";
   if (r.ambiguousName && !r.scopedSearch) return `“${r.profile.name}” is an everyday word, so its headlines are set aside.`;
-  const from = r.sources ? ` (${r.sources.googleNews} from Google News, ${r.sources.gdelt} from the GDELT archive)` : "";
-  if (!r.headlines.length) return `No headlines in the two years before ${r.asOf} named the company${from}.`;
-  return `${r.headlines.length} headlines from the two years before ${r.asOf} were about the company${from}.`;
+  const found = r.sources ? r.sources.googleNews + r.sources.gdelt : r.rawHeadlines;
+  const named = r.nameMatched ?? r.headlines.length;
+  return `${found} headlines found in the two years before ${r.asOf}; ${named} named the company and ${r.headlines.length} were business news about it, so only those count.`;
 }
 
 let dialog;
@@ -78,9 +78,23 @@ function openEvidence(r) {
     const item = el("li");
     const t = el("time", null, h.date);
     t.dateTime = h.date;
-    item.append(t, el("span", null, h.text), el("span", `s ${h.score > 0 ? "pos" : h.score < 0 ? "neg" : ""}`, (h.score > 0 ? "+" : "") + h.score));
+    const text = el("span", null, h.text);
+    if (h.source) text.append(el("small", "outlet", h.source));
+    item.append(t, text, el("span", `s ${h.score > 0 ? "pos" : h.score < 0 ? "neg" : ""}`, (h.score > 0 ? "+" : "") + h.score));
     heads.append(item);
   });
+  if (r.setAside?.length) {
+    const aside = el("details", "inline");
+    aside.append(el("summary", null, `Set aside: ${r.setAside.reduce((n, g) => n + g.count, 0)} headlines that named the company but weren't business news`));
+    const list = el("ul", "aside");
+    r.setAside.forEach((g) => {
+      const li = el("li");
+      li.append(el("strong", null, `${g.count} `), `${g.reason}, e.g. “${g.examples.at(-1)}”`);
+      list.append(li);
+    });
+    aside.append(list);
+    left.append(aside);
+  }
   const grid = el("div", "evidence-grid");
   grid.append(left, r.headlines.length ? heads : el("p", "muted", "No matching headlines to show."));
   body.append(head, grid);
