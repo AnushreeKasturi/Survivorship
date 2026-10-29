@@ -130,10 +130,13 @@ forest from `results/model_structural.json` (and the news model from
 `results/model_coefficients_leakfree.json`). Results are baked in from
 `results/` at build time. Four pages:
 
-- **Overview:** the population, the pipeline, the predictor and the cross-validated results.
-- **Startups:** eight startups with known endings and the live watchlist, as cards.
-- **Archive:** every startup ever scored, with score history, plus a queue for visitor suggestions.
-- **How it works:** the method end to end, from the 2013 cutoff to the benchmark and the scheduler.
+- **Overview:** the question, the predictor and the pipeline.
+- **Research:** every finding, chart and open question, each number linked to the file it comes from.
+- **Startups:** eight known endings, the live watchlist and visitor suggestions, as cards with score history and evidence (`/archive` redirects here).
+- **How it works:** the method end to end, from the 2013 cutoff to the live server.
+
+Scores are shown out of 100, not as percentages: the models were trained with
+balanced class weights, so a score ranks startups but isn't a probability.
 
 The startups in `startups/` were checked against the public sources listed with
 each one; dates known only to the year are set to 1 July. Case studies are

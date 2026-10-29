@@ -37,8 +37,6 @@ export function onSubmit(id, handler) {
   return form;
 }
 
-export const pct = (p) => `${(p * 100).toFixed(1)}%`;
-
 /** Relative time in plain words, e.g. "3 hours ago". */
 export function ago(iso) {
   const s = (Date.now() - Date.parse(iso)) / 1000;

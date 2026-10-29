@@ -5,7 +5,7 @@ import java.time.{Instant, LocalDate}
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.classification.{GBTClassifier, RandomForestClassifier, LogisticRegression => SparkLogisticRegression}
 import org.apache.spark.ml.linalg.{Vector => MLVector}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{col, udf}
 import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.writePretty

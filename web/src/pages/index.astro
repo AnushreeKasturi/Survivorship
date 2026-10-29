@@ -1,7 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
-import Source from "../components/Source.astro";
-import { cv, significance, weights, model, cohortSize, population, closedCount, signed, shortModel } from "../lib/data.js";
+import { model, population, closedCount } from "../lib/data.js";
 
 // ASCII pipeline: five boxes, padded to one width so they line up.
 const W = 18;
@@ -14,24 +13,8 @@ const flow = [
   [box("2 years of news", "per startup"), "Google News headlines from before the cutoff."],
   [box("is it them?", "name matching"), "Headlines that never name the company are dropped."],
   [box("+  0  −", "tone of voice"), "A small lexicon scores each headline."],
-  [box("will it last?", "Spark MLlib"), "Weighted logistic regression, tested with 5-fold CV."],
+  [box("will it last?", "Spark MLlib"), "Logistic regression and a random forest, tested with 5-fold CV."],
 ];
-
-const lrDelta = (a, b) => significance.find((s) => s.model === "Logistic Regression" && s.feature_set_a === a && s.feature_set_b === b);
-const tone = lrDelta("Leak-free + Coverage", "Leak-free + Sentiment");
-const volume = lrDelta("Leak-free", "Leak-free + Coverage");
-const leakFree = cv.find((r) => r.population === "full" && r.feature_set === "Financial (leak-free)" && r.model === "Logistic Regression");
-
-// Charts for "see the numbers".
-const auc = { lo: 0.55, hi: 0.76, x0: 210, x1: 700 };
-const ax = (v) => auc.x0 + ((v - auc.lo) / (auc.hi - auc.lo)) * (auc.x1 - auc.x0);
-const aucRows = cv.map((r, i) => ({ ...r, y: 24 + i * 30 + (r.population === "cohort" ? 24 : 0) }));
-const leaky = (r) => r.population === "full" && r.feature_set.includes("original");
-const nice = (s) => s.replace("Financial ", "").replace(/[()]/g, "").replace("Leak-free + ", "+ ").toLowerCase();
-const forest = { lo: -0.06, hi: 0.03, x0: 290, x1: 700 };
-const fx = (v) => forest.x0 + ((v - forest.lo) / (forest.hi - forest.lo)) * (forest.x1 - forest.x0);
-const forestRows = significance.map((s, i) => ({ ...s, y: 24 + i * 30, label: `${shortModel[s.model]}: ${nice(s.feature_set_a)} → ${nice(s.feature_set_b)}` }));
-const excludesZero = (r) => r.ci_high < 0 || r.ci_low > 0;
 
 const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance", "Health Care", "Education", "Games"];
 ---
@@ -53,84 +36,10 @@ const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance"
     <p class="caption" aria-hidden="true">x marks the {((closedCount / population) * 100).toFixed(0)}% of startups that closed</p>
   </section>
 
-  <section id="answer">
-    <div class="head center">
-      <h2 class="h2">The short answer</h2>
-      <p class="lede">A modest yes for what the news says, a firm no for how much of it there is.</p>
-    </div>
-    <div class="findings">
-      <div class="finding">
-        <span class="n glow">{leakFree.auc_mean.toFixed(2)}</span>
-        <p><b>Structure alone ranks startups better than chance.</b> Age, funding timing, sector and country reach an AUC of {leakFree.auc_mean.toFixed(2)}, after we removed a field that quietly leaked the future.</p>
-        <Source path="results/cv_summary.csv" />
-      </div>
-      <div class="finding">
-        <span class="n glow">{signed(volume.delta_auc, 2)}</span>
-        <p><b>How much news a startup gets adds nothing.</b> Coverage volume changed the score by {signed(volume.delta_auc)} AUC, well inside the noise.</p>
-        <Source path="results/significance.csv" />
-      </div>
-      <div class="finding">
-        <span class="n glow">{signed(tone.delta_auc, 2)}</span>
-        <p><b>What the news says helps, a little.</b> Headline tone added {signed(tone.delta_auc)} AUC on a {cohortSize}-startup sample. Borderline, and not significant after correcting for multiple tests.</p>
-        <Source path="results/significance.csv" />
-      </div>
-    </div>
-
-    <details class="more">
-      <summary>See the numbers</summary>
-      <figure class="figure">
-        <svg class="chart" viewBox={`0 0 720 ${aucRows.at(-1).y + 44}`} role="img" aria-label="Cross-validated AUC for each feature set and model">
-          {[0.55, 0.6, 0.65, 0.7, 0.75].map((t) => (
-            <g>
-              <line class="axis" x1={ax(t)} x2={ax(t)} y1="8" y2={aucRows.at(-1).y + 16} />
-              <text x={ax(t)} y={aucRows.at(-1).y + 34} text-anchor="middle">{t.toFixed(2)}</text>
-            </g>
-          ))}
-          {aucRows.map((r) => (
-            <g>
-              <text class="lbl" x="0" y={r.y + 5}>{shortModel[r.model]}, {nice(r.feature_set)}</text>
-              <line class={`ci ${leaky(r) ? "hl" : ""}`} x1={ax(r.auc_mean - r.auc_sd)} x2={ax(r.auc_mean + r.auc_sd)} y1={r.y} y2={r.y} />
-              <circle class={`pt ${leaky(r) ? "hl" : ""}`} cx={ax(r.auc_mean)} cy={r.y} r="5" />
-              <text x={ax(r.auc_mean + r.auc_sd) + 8} y={r.y + 4}>{r.auc_mean.toFixed(3)}</text>
-            </g>
-          ))}
-        </svg>
-        <figcaption>Cross-validated AUC, mean ± one standard deviation across five folds. The top four rows use all {population.toLocaleString("en-US")} startups, the rest the {cohortSize}-startup news cohort. Highlighted: the original feature set with the leak. <Source path="results/cv_summary.csv" /></figcaption>
-      </figure>
-      <figure class="figure">
-        <svg class="chart" viewBox={`0 0 720 ${forestRows.at(-1).y + 44}`} role="img" aria-label="Paired bootstrap differences in AUC with 95% intervals">
-          <line class="zero" x1={fx(0)} x2={fx(0)} y1="8" y2={forestRows.at(-1).y + 16} />
-          {[-0.05, -0.025, 0, 0.025].map((t) => <text x={fx(t)} y={forestRows.at(-1).y + 34} text-anchor="middle">{signed(t, 3)}</text>)}
-          {forestRows.map((r) => (
-            <g>
-              <text class="lbl" x="0" y={r.y + 5}>{r.label}</text>
-              <line class={`ci ${excludesZero(r) ? "hl" : ""}`} x1={fx(r.ci_low)} x2={fx(r.ci_high)} y1={r.y} y2={r.y} />
-              <circle class={`pt ${excludesZero(r) ? "hl" : ""}`} cx={fx(r.delta_auc)} cy={r.y} r="5" />
-            </g>
-          ))}
-        </svg>
-        <figcaption>Change in AUC when one group of features is added or removed, with 95% intervals from 2,000 paired bootstrap resamples. Highlighted intervals exclude zero. <Source path="results/significance.csv" /></figcaption>
-      </figure>
-      <figure class="figure">
-        <svg class="chart" viewBox={`0 0 720 ${weights.slice(0, 8).length * 30 + 20}`} role="img" aria-label="Largest standardised logistic regression weights">
-          <line class="zero" x1="470" x2="470" y1="0" y2={weights.slice(0, 8).length * 30 + 4} />
-          {weights.slice(0, 8).map((w, i) => (
-            <g>
-              <text class="lbl" x="0" y={i * 30 + 20}>{w.feature}</text>
-              <line class={`ci ${w.standardised_coefficient < 0 ? "hl" : ""}`} x1="470" x2={470 + w.standardised_coefficient * 400} y1={i * 30 + 15} y2={i * 30 + 15} style="stroke-width: 8" />
-              <text x={w.standardised_coefficient < 0 ? 470 + w.standardised_coefficient * 400 - 8 : 470 + w.standardised_coefficient * 400 + 8} y={i * 30 + 19} text-anchor={w.standardised_coefficient < 0 ? "end" : "start"}>{signed(w.standardised_coefficient, 2)}</text>
-            </g>
-          ))}
-        </svg>
-        <figcaption>The largest weights in the news-cohort model, with every feature standardised so their sizes compare. Highlighted weights push towards closing. <Source path="results/cohort_lr_coefficients.csv" /></figcaption>
-      </figure>
-    </details>
-  </section>
-
   <section id="score">
     <div class="head center">
       <h2 class="h2">Score a startup</h2>
-      <p class="lede">Three details are enough. The real Scala model answers, with today as its cutoff: a random forest that beat logistic regression on our <a href="/how-it-works/#evaluation">benchmark</a>.</p>
+      <p class="lede">Three facts place a startup among the 2013 startups the model learned from. A higher score means more like the ones that survived; it isn't a probability. <a href="/research/#limits">Why</a></p>
     </div>
     <p class="offline center" hidden>Scoring needs the Scala server. From <code>scala/</code>, run <code>sbt "runMain com.startupsurvival.web.Server"</code> and open <code>localhost:8080</code>.</p>
     <div class="card predictor">
@@ -175,7 +84,7 @@ const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance"
       <div class="verdict" id="verdict" aria-live="polite">
         <div class="dial">
           <svg class="ring" viewBox="0 0 200 200" aria-hidden="true"><circle class="bg" cx="100" cy="100" r="90" /><circle class="fg" cx="100" cy="100" r="90" /></svg>
-          <div class="pct"><span>–</span><small>chance it keeps going</small></div>
+          <div class="pct"><span>–</span><small>model score</small></div>
         </div>
         <p class="word">&nbsp;</p>
         <p class="note basis"></p>
@@ -202,14 +111,18 @@ const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance"
   </section>
 
   <section style="padding-top: 40px">
-    <div class="links">
+    <div class="links three">
+      <a href="/research/">
+        <strong>Research</strong>
+        <span>What the project found, including what didn't work, with the source of every number.</span>
+      </a>
       <a href="/startups/">
-        <strong>Real startups</strong>
-        <span>Eight companies with known endings, a watchlist re-checked every six hours, and room for yours.</span>
+        <strong>Startups</strong>
+        <span>Eight known endings, a live watchlist, and a queue for your suggestions.</span>
       </a>
       <a href="/how-it-works/">
         <strong>How it works</strong>
-        <span>The cutoff, the leak, the news matching and the honest testing, one step at a time.</span>
+        <span>The method, one step at a time, from the 2013 cutoff to the live server.</span>
       </a>
     </div>
   </section>

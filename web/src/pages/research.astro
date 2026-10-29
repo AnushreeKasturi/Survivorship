@@ -1,0 +1,265 @@
+---
+import Base from "../layouts/Base.astro";
+import Source from "../components/Source.astro";
+import { cv, significance, weights, cohortSize, population, signed, shortModel, benchmark, caseStudies, funnel } from "../lib/data.js";
+
+const n = (x) => x.toLocaleString("en-US");
+const steps = [
+  ["answer", "The short answer"],
+  ["data", "The data"],
+  ["leakage", "A leak in the features"],
+  ["news", "Does news help?"],
+  ["weights", "What the model leans on"],
+  ["benchmark", "A better model"],
+  ["cases", "Real startups"],
+  ["quality", "How good is the news?"],
+  ["limits", "What it can't do"],
+  ["next", "Open questions"],
+];
+
+const lr = (a, b) => significance.find((s) => s.model === "Logistic Regression" && s.feature_set_a === a && s.feature_set_b === b);
+const leak = lr("Financial (original)", "Financial (leak-free)");
+const volume = lr("Leak-free", "Leak-free + Coverage");
+const tone = lr("Leak-free + Coverage", "Leak-free + Sentiment");
+const row = (pop, set, model = "Logistic Regression") => cv.find((r) => r.population === pop && r.feature_set === set && r.model === model);
+const leakFree = row("full", "Financial (leak-free)");
+const original = row("full", "Financial (original)");
+const interval = (d) => `95% interval ${signed(d.ci_low)} to ${signed(d.ci_high)}, p ${d.p_value === 0 ? "< 0.001" : `= ${d.p_value.toFixed(3)}`}`;
+
+// Dot-and-whisker AUC charts, one per population.
+const nice = (s) => s.replace("Financial ", "").replace(/[()]/g, "").replace("Leak-free + ", "+ ").toLowerCase();
+const auc = { lo: 0.55, hi: 0.76, x0: 210, x1: 700 };
+const ax = (v) => auc.x0 + ((v - auc.lo) / (auc.hi - auc.lo)) * (auc.x1 - auc.x0);
+const aucRows = (pop) => cv.filter((r) => r.population === pop).map((r, i) => ({ ...r, y: 24 + i * 30 }));
+const fullRows = aucRows("full");
+const cohortRows = aucRows("cohort");
+
+// Forest plot of the paired-bootstrap differences.
+const forest = { lo: -0.06, hi: 0.03, x0: 290, x1: 700 };
+const fx = (v) => forest.x0 + ((v - forest.lo) / (forest.hi - forest.lo)) * (forest.x1 - forest.x0);
+const forestRows = significance.map((s, i) => ({ ...s, y: 24 + i * 30, label: `${shortModel[s.model]}: ${nice(s.feature_set_a)} → ${nice(s.feature_set_b)}` }));
+const excludesZero = (r) => r.ci_high < 0 || r.ci_low > 0;
+const top = weights.slice(0, 8);
+
+const live = benchmark.candidates.find((c) => c.name === "rf-100");
+const base = benchmark.candidates.find((c) => c.name === benchmark.baseline);
+const label = (c) => ({ lr: "Logistic regression", "lr-l2-0.1": "Logistic regression, stronger L2", gbt: "Gradient-boosted trees", rf: "Random forest, 200 trees", "rf-100": "Random forest, 100 trees" })[c.name] ?? c.name;
+
+const cases = caseStudies.cases;
+const structuralHits = cases.filter((c) => c.correct).length;
+const withNews = cases.filter((c) => c.financialSentiment != null);
+const newsHits = withNews.filter((c) => (c.financialSentiment >= 0.5) === (c.profile.outcome === "operating")).length;
+const byName = (name) => cases.find((c) => c.profile.name === name);
+const figma = byName("Figma");
+const quibi = byName("Quibi");
+---
+
+<Base title="Research · Survivorship" description="What the Survivorship project found, with the source of every number." page="research">
+  <section style="padding-bottom: 20px">
+    <div class="head center" style="margin: 0 auto">
+      <h1 class="h1">Research</h1>
+      <p class="lede">What the project found, and what it didn't. Every number links to the file it comes from.</p>
+    </div>
+  </section>
+
+  <section class="longform" style="padding-top: 40px">
+    <ol class="toc" aria-label="Sections">
+      {steps.map(([id, text]) => <li><a href={`#${id}`}>{text}</a></li>)}
+    </ol>
+
+    <div>
+      <article class="step" id="answer">
+        <h2>The short answer</h2>
+        <p>
+          The question: does public news about a startup, from before a fixed date, help predict whether it survives, beyond
+          its age, funding timing, sector and country?
+        </p>
+        <div class="findings compact">
+          <div class="finding">
+            <span class="n glow">{leakFree.auc_mean.toFixed(2)}</span>
+            <p><b>Structure alone ranks startups better than chance</b> (0.5 would be a coin flip).</p>
+          </div>
+          <div class="finding">
+            <span class="n glow">{signed(volume.delta_auc, 2)}</span>
+            <p><b>How much news a startup gets adds nothing.</b></p>
+          </div>
+          <div class="finding">
+            <span class="n glow">{signed(tone.delta_auc, 2)}</span>
+            <p><b>What the news says helps, a little,</b> and not significantly once several tests are corrected for.</p>
+          </div>
+        </div>
+        <Source path="results/cv_summary.csv" /> <Source path="results/significance.csv" />
+      </article>
+
+      <article class="step" id="data">
+        <h2>The data</h2>
+        <p>
+          A Crunchbase snapshot of {n(funnel.raw)} companies. {n(funnel.eligible)} were founded and first funded before
+          1 January 2013 and are recorded as operating or closed; {n(funnel.closed)} of them
+          ({((funnel.closed / funnel.eligible) * 100).toFixed(1)}%) closed. Every feature uses only what was known before that date.
+          <a href="/how-it-works/#cutoff">How they were chosen</a>.
+        </p>
+        <Source path="results/phase2_report.txt" />
+      </article>
+
+      <article class="step" id="leakage">
+        <h2>A leak in the features</h2>
+        <p>
+          The first financial features reached AUC {original.auc_mean.toFixed(3)}. One of them, a flag recording whether lifetime
+          funding totals were safe to use, quietly encoded whether a company raised money after 2013, so it carried the answer.
+          Without it, and without anything else built from lifetime totals, AUC is {leakFree.auc_mean.toFixed(3)}:
+          {" "}{signed(leak.delta_auc)} ({interval(leak)}).
+        </p>
+        <figure class="figure">
+          <svg class="chart" viewBox={`0 0 720 ${fullRows.at(-1).y + 44}`} role="img" aria-label="AUC on all startups, original and leak-free features">
+            {[0.55, 0.6, 0.65, 0.7, 0.75].map((t) => (
+              <g><line class="axis" x1={ax(t)} x2={ax(t)} y1="8" y2={fullRows.at(-1).y + 16} /><text x={ax(t)} y={fullRows.at(-1).y + 34} text-anchor="middle">{t.toFixed(2)}</text></g>
+            ))}
+            {fullRows.map((r) => (
+              <g>
+                <text class="lbl" x="0" y={r.y + 5}>{shortModel[r.model]}, {nice(r.feature_set)}</text>
+                <line class={`ci ${r.feature_set.includes("original") ? "hl" : ""}`} x1={ax(r.auc_mean - r.auc_sd)} x2={ax(r.auc_mean + r.auc_sd)} y1={r.y} y2={r.y} />
+                <circle class={`pt ${r.feature_set.includes("original") ? "hl" : ""}`} cx={ax(r.auc_mean)} cy={r.y} r="5" />
+                <text x={ax(r.auc_mean + r.auc_sd) + 8} y={r.y + 4}>{r.auc_mean.toFixed(3)}</text>
+              </g>
+            ))}
+          </svg>
+          <figcaption>AUC on all {n(population)} startups, mean ± one standard deviation over five folds. Highlighted: the original, leaky features. <Source path="results/cv_summary.csv" /></figcaption>
+        </figure>
+      </article>
+
+      <article class="step" id="news">
+        <h2>Does news help?</h2>
+        <p>
+          Headlines were collected for a balanced cohort of {cohortSize} startups. Feature sets were added one group at a time, so
+          each step isolates one idea: leak-free structure, then how much coverage a startup got, then the tone of that coverage.
+        </p>
+        <ul>
+          <li><strong>Coverage volume:</strong> {signed(volume.delta_auc)} AUC ({interval(volume)}).</li>
+          <li><strong>Tone:</strong> {signed(tone.delta_auc)} AUC ({interval(tone)}). Borderline, and not significant after correcting for multiple comparisons.</li>
+        </ul>
+        <figure class="figure">
+          <svg class="chart" viewBox={`0 0 720 ${cohortRows.at(-1).y + 44}`} role="img" aria-label="AUC on the news cohort for each feature set">
+            {[0.55, 0.6, 0.65, 0.7, 0.75].map((t) => (
+              <g><line class="axis" x1={ax(t)} x2={ax(t)} y1="8" y2={cohortRows.at(-1).y + 16} /><text x={ax(t)} y={cohortRows.at(-1).y + 34} text-anchor="middle">{t.toFixed(2)}</text></g>
+            ))}
+            {cohortRows.map((r) => (
+              <g>
+                <text class="lbl" x="0" y={r.y + 5}>{shortModel[r.model]}, {nice(r.feature_set)}</text>
+                <line class="ci" x1={ax(r.auc_mean - r.auc_sd)} x2={ax(r.auc_mean + r.auc_sd)} y1={r.y} y2={r.y} />
+                <circle class="pt" cx={ax(r.auc_mean)} cy={r.y} r="5" />
+                <text x={ax(r.auc_mean + r.auc_sd) + 8} y={r.y + 4}>{r.auc_mean.toFixed(3)}</text>
+              </g>
+            ))}
+          </svg>
+          <figcaption>AUC on the {cohortSize}-startup news cohort. <Source path="results/cv_summary.csv" /></figcaption>
+        </figure>
+        <figure class="figure">
+          <svg class="chart" viewBox={`0 0 720 ${forestRows.at(-1).y + 44}`} role="img" aria-label="Paired bootstrap differences in AUC with 95% intervals">
+            <line class="zero" x1={fx(0)} x2={fx(0)} y1="8" y2={forestRows.at(-1).y + 16} />
+            {[-0.05, -0.025, 0, 0.025].map((t) => <text x={fx(t)} y={forestRows.at(-1).y + 34} text-anchor="middle">{signed(t, 3)}</text>)}
+            {forestRows.map((r) => (
+              <g>
+                <text class="lbl" x="0" y={r.y + 5}>{r.label}</text>
+                <line class={`ci ${excludesZero(r) ? "hl" : ""}`} x1={fx(r.ci_low)} x2={fx(r.ci_high)} y1={r.y} y2={r.y} />
+                <circle class={`pt ${excludesZero(r) ? "hl" : ""}`} cx={fx(r.delta_auc)} cy={r.y} r="5" />
+              </g>
+            ))}
+          </svg>
+          <figcaption>Every comparison, with 95% intervals from 2,000 paired bootstrap resamples. Highlighted intervals exclude zero. <Source path="results/significance.csv" /></figcaption>
+        </figure>
+      </article>
+
+      <article class="step" id="weights">
+        <h2>What the model leans on</h2>
+        <p>The largest weights in the news-cohort logistic regression, with every feature standardised so their sizes compare. Negative weights push towards closing.</p>
+        <figure class="figure">
+          <svg class="chart" viewBox={`0 0 720 ${top.length * 30 + 20}`} role="img" aria-label="Largest standardised logistic regression weights">
+            <line class="zero" x1="470" x2="470" y1="0" y2={top.length * 30 + 4} />
+            {top.map((w, i) => (
+              <g>
+                <text class="lbl" x="0" y={i * 30 + 20}>{w.feature}</text>
+                <line class={`ci ${w.standardised_coefficient < 0 ? "hl" : ""}`} x1="470" x2={470 + w.standardised_coefficient * 400} y1={i * 30 + 15} y2={i * 30 + 15} style="stroke-width: 8" />
+                <text x={w.standardised_coefficient < 0 ? 470 + w.standardised_coefficient * 400 - 8 : 470 + w.standardised_coefficient * 400 + 8} y={i * 30 + 19} text-anchor={w.standardised_coefficient < 0 ? "end" : "start"}>{signed(w.standardised_coefficient, 2)}</text>
+              </g>
+            ))}
+          </svg>
+          <figcaption><Source path="results/cohort_lr_coefficients.csv" /></figcaption>
+        </figure>
+      </article>
+
+      <article class="step" id="benchmark">
+        <h2>A better model</h2>
+        <p>
+          Candidates for the live model were compared on the same five folds over all {n(population)} startups, using leak-free
+          features only. One counts as better only if its gain's 95% interval is above zero. A random forest won:
+          AUC {live.aucMean.toFixed(3)} against {base.aucMean.toFixed(3)}.
+        </p>
+        <table class="bench">
+          <thead><tr><th>Model</th><th>AUC</th><th>vs logistic regression</th><th>Case studies</th></tr></thead>
+          <tbody>
+            {benchmark.candidates.map((c) => (
+              <tr class={c.name === "rf-100" ? "hl" : ""}>
+                <td>{label(c)}{c.name === "rf-100" ? " (live)" : ""}</td>
+                <td>{c.aucMean.toFixed(3)}</td>
+                <td>{c.deltaAucVsBaseline ? `${signed(c.deltaAucVsBaseline.delta)} (${c.verdict})` : "baseline"}</td>
+                <td>{c.caseStudies.correctAt05} of {c.caseStudies.of}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <Source path="results/benchmark.json" />
+      </article>
+
+      <article class="step" id="cases">
+        <h2>Real startups</h2>
+        <p>
+          Eight startups with known endings, four that closed and four that didn't, each scored as of a date when its fate was
+          still open. The random forest calls {structuralHits} of {cases.length}; the news model, on the {withNews.length} whose
+          headlines passed the business-news filter, calls {newsHits}. Eight cases can't separate models, so they're a sanity
+          check, not a target. <a href="/startups/">See every card and its evidence</a>.
+        </p>
+        <Source path="results/case_studies.json" />
+      </article>
+
+      <article class="step" id="quality">
+        <h2>How good is the news?</h2>
+        <p>
+          A hand audit of 100 headlines the name matcher accepted found 29 strictly about the company, 38 about its product and
+          33 about something else. <Source path="results/name_match_audit.csv" />
+        </p>
+        <p>
+          Name matching alone also let through headlines that only contain the name. The business-news filter added for the live
+          pages set aside all {figma.nameMatched} "Figma" headlines (toy figures) and kept {quibi.headlines.length} of Quibi's
+          {" "}{quibi.nameMatched} (most were reviews of its shows). The news model's tone weights were learned before that filter
+          existed. <Source path="results/case_studies.json" />
+        </p>
+      </article>
+
+      <article class="step" id="limits">
+        <h2>What it can't do</h2>
+        <ul>
+          <li>It learned from startups judged before 2013. Today's companies raise and fail on different timelines.</li>
+          <li>Five coarse facts describe a group of startups, not one company; the score reflects how similar startups fared.</li>
+          <li>Its scores aren't probabilities. Training weighted closures as much as survivals, which pulls scores towards 50%.</li>
+          <li>The tone weights come from only 69 startups with matched headlines. <Source path="report/results.md" /></li>
+        </ul>
+      </article>
+
+      <article class="step" id="next">
+        <h2>Open questions</h2>
+        <p>Not done yet; each would change what the project can claim.</p>
+        <ul>
+          <li><strong>Retrain the news model on filtered news,</strong> then let the benchmark decide whether tone helps once the noise is gone.</li>
+          <li><strong>A shuffled-label control:</strong> retrain with outcomes shuffled. If the learned weights carry signal, AUC should fall to about 0.5.</li>
+          <li><strong>Calibrate the scores</strong> so they can be read as probabilities.</li>
+          <li><strong>Events, not snapshots:</strong> classify headlines by event (funding, layoffs, executive exits, lawsuits) and track each startup's timeline for early warning signs.</li>
+          <li><strong>A newer cohort</strong> from company registries (MCA, Udyam, Companies House) with recent news, so the model reflects today. <a href="https://github.com/AnushreeKasturi/Survivorship/blob/main/docs/NEWS_AGGREGATION.md">The plan</a>.</li>
+          <li><strong>Funding stages as a Markov chain,</strong> simulated forward, once round-by-round funding data is available.</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <script>import "../scripts/toc.js";</script>
+</Base>

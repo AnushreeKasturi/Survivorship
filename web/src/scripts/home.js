@@ -2,7 +2,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { api, onSubmit } from "./api.js";
 import { sky } from "./sky.js";
-import { pct, word, maturityNote } from "./verdict.js";
+import { score, word, maturityNote } from "./verdict.js";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -41,12 +41,14 @@ onSubmit("predict-form", async (f) => {
     categories: f.getAll("categories"),
     headlines: parseHeadlines(f.get("headlines")),
   });
-  const p = r.financialSentiment ?? r.financialOnly;
+  // The news model is a logistic regression with its own 0.5 threshold; the structural score uses the forest's.
+  const withNews = r.financialSentiment != null;
+  const p = withNews ? r.financialSentiment : r.financialOnly;
   ring.style.strokeDashoffset = 565 * (1 - p);
-  verdict.querySelector(".pct span").textContent = pct(p);
-  verdict.querySelector(".word").textContent = word(p, r.threshold);
-  verdict.querySelector(".basis").textContent = r.financialSentiment != null
-    ? `With your headlines. Without them: ${pct(r.financialOnly)}.`
+  verdict.querySelector(".pct span").textContent = score(p);
+  verdict.querySelector(".word").textContent = word(p, withNews ? 0.5 : r.threshold);
+  verdict.querySelector(".basis").textContent = withNews
+    ? `With your headlines. Without them: ${score(r.financialOnly)}.`
     : "From age, funding timing, category and country.";
   const note = maturityNote(r.maturity);
   verdict.classList.toggle("faded", r.maturity?.level === "established");

@@ -1,6 +1,9 @@
 // Plain-language verdicts shared by the predictor and the startup lists.
 
+// Scores are shown out of 100, not as percentages: training weighted closures as much as
+// survivals, so a score is a ranking, not a probability. pct is for CSS positions only.
 export const pct = (p) => `${Math.round(p * 100)}%`;
+export const score = (p) => String(Math.round(p * 100));
 
 /** Bands around the model's decision threshold; the forest's scores sit close to it, so the bands are narrow. */
 export const word = (p, t = 0.5) =>

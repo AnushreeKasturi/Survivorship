@@ -1,7 +1,7 @@
-// Startup cards, shared by the Startups and Archive pages. Text goes in with
+// Startup cards for the Startups page. Text goes in with
 // textContent only: visitor-suggested names are untrusted.
 import { ago } from "./api.js";
-import { pct, word, maturityNote } from "./verdict.js";
+import { pct, score, word, maturityNote } from "./verdict.js";
 
 export const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -23,7 +23,7 @@ function sparkline(points) {
   line.setAttribute("points", ys.map((y, i) => `${(i / (ys.length - 1)) * 100},${22 - ((y - lo) / (hi - lo)) * 20}`).join(" "));
   svg.append(line);
   const title = document.createElementNS(NS, "title");
-  title.textContent = `${points.length} checks, from ${pct(ys[0])} to ${pct(ys.at(-1))}`;
+  title.textContent = `${points.length} checks, from ${score(ys[0])} to ${score(ys.at(-1))}`;
   svg.append(title);
   return svg;
 }
@@ -55,9 +55,9 @@ function openEvidence(r) {
 
   const left = el("div");
   const scores = el("p");
-  scores.append("Without news ", el("strong", null, pct(r.financialOnly)));
-  if (r.financialSentiment != null) scores.append(", with news ", el("strong", null, pct(r.financialSentiment)));
-  scores.append(` chance of still going, as of ${r.asOf}. The ${r.model || "model"} calls anything above ${pct(r.threshold ?? 0.5)} a survivor.`);
+  scores.append("Scores ", el("strong", null, score(r.financialOnly)), " out of 100 without news");
+  if (r.financialSentiment != null) scores.append(" and ", el("strong", null, score(r.financialSentiment)), " with news");
+  scores.append(`, as of ${r.asOf}. The ${r.model || "model"} counts a score above ${score(r.threshold ?? 0.5)} as a survivor. Scores rank startups; they aren't probabilities.`);
   left.append(scores);
   const note = maturityNote(r.maturity);
   if (note) left.append(el("p", "notice", note));
@@ -117,8 +117,8 @@ export function card(r) {
   }
 
   const t = r.threshold ?? 0.5;
-  const score = el("div", "tile-score");
-  const big = el("span", "pct", pct(r.financialOnly));
+  const scoreRow = el("div", "tile-score");
+  const big = el("span", "pct", score(r.financialOnly));
   if (r.maturity?.level === "established") big.classList.add("faded");
   const verdict = el("span", "verdict-word");
   if (p.outcome) {
@@ -126,8 +126,8 @@ export function card(r) {
     verdict.textContent = hit ? "Called it" : "Missed";
     verdict.classList.add(hit ? "hit" : "miss");
   } else verdict.textContent = word(r.financialOnly, t);
-  score.append(big, verdict);
-  li.append(score);
+  scoreRow.append(big, verdict);
+  li.append(scoreRow);
 
   const meter = el("div", "meter");
   const dot = el("i");
@@ -136,7 +136,7 @@ export function card(r) {
   if (r.financialSentiment != null) {
     const news = el("i", "news");
     news.style.left = pct(r.financialSentiment);
-    news.title = `With news: ${pct(r.financialSentiment)}`;
+    news.title = `With news: ${score(r.financialSentiment)}`;
     meter.append(news);
   }
   li.append(meter);
