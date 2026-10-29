@@ -1,0 +1,6 @@
+---
+// A link to the file in the repository that backs a claim on the page.
+const { path, label } = Astro.props;
+const href = `https://github.com/AnushreeKasturi/Survivorship/blob/main/${path}`;
+---
+<a class="src" href={href} rel="noopener">source: {label ?? path}</a>

@@ -1,5 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
+import Source from "../components/Source.astro";
 import { caseStudies, structural } from "../lib/data.js";
 
 const cases = caseStudies.cases;
@@ -27,8 +28,9 @@ const closed = cases.filter((c) => c.profile.outcome === "closed").length;
         {closed} that closed and {cases.length - closed} that made it, each scored as of a date when its fate was still open.
         The {caseStudies.model ?? "model"} calls <span class="glow">{hits} of {cases.length}</span> correctly; the logistic regression
         it replaced called {structural.base.caseStudies.correctAt05}. Eight endings are too few to judge a model by, so the
-        benchmark below them is what decides.
+        <a href="/how-it-works/#evaluation">cross-validated benchmark</a> is what decides.
       </p>
+      <p><Source path="results/case_studies.json" /> <Source path="results/benchmark.json" /></p>
     </div>
     <ul class="tiles" id="cases"></ul>
     <script type="application/json" id="case-data" set:html={JSON.stringify(cases).replace(/</g, "\\u003c")}></script>

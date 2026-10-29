@@ -1,6 +1,9 @@
 ---
 import Base from "../layouts/Base.astro";
-import { population, closedCount, cohortSize, model, benchmark, structural } from "../lib/data.js";
+import Source from "../components/Source.astro";
+import { population, closedCount, cohortSize, model, benchmark, structural, funnel, cv } from "../lib/data.js";
+const n = (x) => x.toLocaleString("en-US");
+const cohortClosed = cv.find((r) => r.population === "cohort").n_closed;
 
 const steps = [
   ["question", "The question"],
@@ -48,10 +51,20 @@ const timeline = `founded ──── first round ──── ░░░░ 2 y
         <h2>One date splits past from future</h2>
         <p>
           Every startup is judged as of <strong>1 January 2013</strong>. Features may only use what was knowable before then; the
-          label is what happened after. Of the {population.toLocaleString("en-US")} startups founded and funded before the cutoff,
-          {" "}{closedCount.toLocaleString("en-US")} ({((closedCount / population) * 100).toFixed(1)}%) had closed by the 2013–2014 snapshot.
-          Acquired companies are left out, because an acquisition is neither a clean success nor a failure.
+          label is the status recorded in the 2013–2014 snapshot. This is how the startups were chosen:
         </p>
+        <table class="bench">
+          <tbody>
+            <tr><td>Companies in the Crunchbase snapshot</td><td>{n(funnel.raw)}</td></tr>
+            <tr><td>Recorded as acquired or IPO, or with no status (left out: an acquisition is neither a clean success nor a failure)</td><td>−{n(funnel.excluded)}</td></tr>
+            <tr><td>Recorded as operating or closed</td><td>{n(funnel.retained)}</td></tr>
+            <tr><td>… and founded before 2013</td><td>{n(funnel.foundedBefore)}</td></tr>
+            <tr><td>… and first funded before 2013</td><td>{n(funnel.fundedBefore)}</td></tr>
+            <tr class="hl"><td>Both: the startups the model learns from</td><td>{n(funnel.eligible)}</td></tr>
+            <tr><td>… of which closed</td><td>{n(funnel.closed)} ({((funnel.closed / funnel.eligible) * 100).toFixed(1)}%)</td></tr>
+          </tbody>
+        </table>
+        <Source path="results/phase2_report.txt" />
         <pre class="formula" aria-label="Timeline: founded, first round, two years of news, cutoff, outcome">{timeline}</pre>
       </article>
 
@@ -60,23 +73,27 @@ const timeline = `founded ──── first round ──── ░░░░ 2 y
         <p>
           Crunchbase's funding totals are lifetime figures from 2014, so they include rounds raised after the cutoff. Our first
           version only used totals when the last round came before 2013, and recorded whether that guard passed as a flag. The flag
-          itself leaked: it was false almost exactly when a company raised again after 2013, which means it was still alive.
+          itself leaked: it was false whenever a company's last recorded round came after the cutoff, which was true for
+          {" "}{n(funnel.lastFundingAfter)} startups, and a company raising money after 2013 was still alive in 2013.
         </p>
+        <Source path="results/phase2_report.txt" />
         <p>
           Removing everything that depends on lifetime funding cost 0.044 AUC. The leak-free model keeps only facts fixed before
           the cutoff: age, years since the first round, the gap from founding to that round, the top {model.categories.length}
           {" "}categories and the top {model.countries.length} countries.
         </p>
+        <Source path="results/significance.csv" />
       </article>
 
       <article class="step" id="news">
         <h2>Collecting the news</h2>
         <p>
-          Free news APIs don't reach back to 2011, so <code>BatchNewsCollector</code> queries Google News RSS with a date window
-          for each company. It is resumable, gentle with rate limits, and works through a balanced cohort of {cohortSize} startups,
-          half that closed and half that didn't, so coverage can't simply track survival. Raw headlines are stored before matching,
-          so the matcher can change without collecting again.
+          The free tiers of news APIs only go back weeks or months, not to 2011, so <code>BatchNewsCollector</code> queries Google
+          News RSS with a date window for each company. It works through a balanced cohort of {cohortSize} startups ({cohortClosed}
+          {" "}closed, the rest operating), so coverage can't simply track survival. Raw headlines are stored before matching, so the
+          matcher can change without collecting again.
         </p>
+        <Source path="docs/PHASE01_dataset_analysis.md" label="news API limits" /> <Source path="results/cv_summary.csv" label="cohort size" />
       </article>
 
       <article class="step" id="matching">
@@ -103,9 +120,10 @@ const timeline = `founded ──── first round ──── ░░░░ 2 y
           <p class="error" role="alert"></p>
         </form>
         <p>
-          A hand audit of 100 accepted headlines found 29 strictly about the company and 38 about its product. Matching is the
-          weakest link in the pipeline.
+          A hand audit of 100 accepted headlines found 29 strictly about the company, 38 about its product and 33 about something
+          else. Matching is the weakest link in the pipeline.
         </p>
+        <Source path="results/name_match_audit.csv" />
         <p>
           So the live pages add a second check. Naming the company isn't enough: a headline only counts if it reports a business
           event (money, funding, customers, hiring or layoffs, deals, legal trouble, a launch or a shutdown), isn't a review,
@@ -113,6 +131,7 @@ const timeline = `founded ──── first round ──── ░░░░ 2 y
           the 30 "Figma" headlines (they were about Figma-brand toy figures) and 76 of Quibi's 98 (reviews of its shows). The
           evidence for each startup lists what was set aside and why.
         </p>
+        <Source path="results/case_studies.json" />
       </article>
 
       <article class="step" id="scoring">
@@ -143,17 +162,19 @@ const timeline = `founded ──── first round ──── ░░░░ 2 y
       <article class="step" id="models">
         <h2>The models</h2>
         <p>
-          The research experiments use Spark MLlib logistic regression and a linear SVM. Only 13% of startups closed, so an
-          unweighted model learns to say "operating" for everyone. Balanced class weights, computed from training rows only, make
-          both outcomes count equally.
+          The research experiments use Spark MLlib logistic regression and a linear SVM. Only 13% of startups closed, and the first
+          unweighted model caught 1 of the 557 closures in its test split. Balanced class weights, computed from training rows only,
+          make both outcomes count equally.
         </p>
+        <Source path="report/methodology.md" />
         <pre class="formula">weight(class) = rows ÷ (2 × rows in that class)
 P(keeps going) = 1 ÷ (1 + e^−(b + w·x))</pre>
         <p>
           The live site scores with a random forest of {structural.live.name === "rf-100" ? "100" : ""} trees instead, because it won the benchmark below.
-          It is exported from Spark as plain JSON and evaluated by the Scala server, and the export is checked to match Spark's own
-          probabilities on real rows.
+          It is exported from Spark as plain JSON and evaluated by the Scala server. The export refuses to write the model unless its
+          probabilities match Spark's own on 2,000 real startups.
         </p>
+        <Source path="scala/src/main/scala/com/startupsurvival/ml/ModelExport.scala" label="the check" />
       </article>
 
       <article class="step" id="evaluation">
@@ -164,6 +185,7 @@ P(keeps going) = 1 ÷ (1 + e^−(b + w·x))</pre>
           <li>A paired bootstrap with 2,000 resamples puts a 95% interval on every difference.</li>
           <li>Feature sets are nested (leak-free, then plus coverage, then plus tone), so each step isolates one idea.</li>
         </ul>
+        <Source path="results/cv_folds.csv" label="every fold" /> <Source path="results/significance.csv" label="every interval" />
         <p>News volume adds nothing; news tone adds about 0.01 AUC, which doesn't survive a correction for multiple tests. <a href="/#answer">See the numbers.</a></p>
         <h3 class="h3" style="margin-top: 40px">The benchmark</h3>
         <p>
@@ -174,7 +196,7 @@ P(keeps going) = 1 ÷ (1 + e^−(b + w·x))</pre>
           <thead><tr><th>Model</th><th>AUC</th><th>vs logistic regression</th><th>Case studies</th></tr></thead>
           <tbody>
             {benchmark.candidates.map((c) => (
-              <tr class={c.name === "rf-100" ? "live" : ""}>
+              <tr class={c.name === "rf-100" ? "hl" : ""}>
                 <td>{c.description.split(" (")[0].split(",")[0]}{c.name === "rf-100" ? " (live)" : ""}{c.name.includes("l2") ? ", stronger L2" : c.name === "rf" ? ", 200 trees" : c.name === "rf-100" ? ", 100 trees" : ""}</td>
                 <td>{c.aucMean.toFixed(3)}</td>
                 <td>{c.deltaAucVsBaseline ? `${c.deltaAucVsBaseline.delta >= 0 ? "+" : "−"}${Math.abs(c.deltaAucVsBaseline.delta).toFixed(3)} (${c.verdict})` : "baseline"}</td>
@@ -184,6 +206,7 @@ P(keeps going) = 1 ÷ (1 + e^−(b + w·x))</pre>
           </tbody>
         </table>
         <p class="note">Run it with <code>sbt "runMain com.startupsurvival.ml.Benchmark"</code>; results are written to <code>results/benchmark.json</code>.</p>
+        <Source path="results/benchmark.json" />
       </article>
 
       <article class="step" id="platform">
@@ -191,7 +214,7 @@ P(keeps going) = 1 ÷ (1 + e^−(b + w·x))</pre>
         <p><code>web/Server.scala</code> serves this site and a small API backed by the same Scala code, in one Docker image on Render.</p>
         <ul>
           <li><strong>Scoring</strong> on the overview page runs the random forest with today as the cutoff.</li>
-          <li><strong>News aggregation</strong> combines two sources. Google News RSS is searched per company; GDELT's free 15-minute bulk files, around 1,500 articles each from outlets worldwide, are read every six hours and every article that names a tracked startup is kept in a growing archive.</li>
+          <li><strong>News aggregation</strong> combines two sources. Google News RSS is searched per company; GDELT's free bulk files, published every 15 minutes, are read every six hours and every article that names a tracked startup is kept in a growing archive.</li>
           <li><strong>The watchlist</strong> is re-checked every six hours: news from both sources, matched, scored and run through both models. A GitHub Actions cron job wakes the free server so the schedule holds.</li>
           <li><strong>Suggestions</strong> join a queue, are scored at the next check, and stay in the <a href="/archive/">archive</a> with their score history, saved in a Render Key Value store.</li>
           <li><strong>Everyday-word names</strong> like Ramp get help on the live pages only: their news search is narrowed with a founder or product name, and a headline must spell the name exactly as the company does.</li>
@@ -203,7 +226,7 @@ P(keeps going) = 1 ÷ (1 + e^−(b + w·x))</pre>
         <h2>What it can't do</h2>
         <ul>
           <li>It learned from startups judged before 2013. Today's companies raise and fail on different timelines.</li>
-          <li>The tone weights come from only 69 startups with matched headlines, so the news score is illustrative.</li>
+          <li>The tone weights come from only 69 startups with matched headlines, so the news score is illustrative. <Source path="report/results.md" /></li>
           <li>An AUC of 0.68 ranks startups better than chance, but it is far from a verdict on any single company.</li>
         </ul>
         <p><a href="/startups/">See it on real startups.</a></p>

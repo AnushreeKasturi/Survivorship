@@ -1,5 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
+import Source from "../components/Source.astro";
 import { cv, significance, weights, model, cohortSize, population, closedCount, signed, shortModel } from "../lib/data.js";
 
 // ASCII pipeline: five boxes, padded to one width so they line up.
@@ -41,8 +42,8 @@ const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance"
     <div>
       <h1 class="h1">Can the news tell which startups will survive?</h1>
       <p class="lede">
-        We followed {population.toLocaleString("en-US")} startups past 1 January 2013 and asked whether the headlines written
-        about them beforehand knew something their funding history didn't.
+        {population.toLocaleString("en-US")} startups from a Crunchbase snapshot, judged on what was known before 2013.
+        Does their news say anything their funding history doesn't? <a href="/how-it-works/#cutoff">How they were chosen</a>
       </p>
       <div class="actions">
         <a class="btn" href="#score">Score a startup</a>
@@ -61,14 +62,17 @@ const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance"
       <div class="finding">
         <span class="n glow">{leakFree.auc_mean.toFixed(2)}</span>
         <p><b>Structure alone ranks startups better than chance.</b> Age, funding timing, sector and country reach an AUC of {leakFree.auc_mean.toFixed(2)}, after we removed a field that quietly leaked the future.</p>
+        <Source path="results/cv_summary.csv" />
       </div>
       <div class="finding">
         <span class="n glow">{signed(volume.delta_auc, 2)}</span>
         <p><b>How much news a startup gets adds nothing.</b> Coverage volume changed the score by {signed(volume.delta_auc)} AUC, well inside the noise.</p>
+        <Source path="results/significance.csv" />
       </div>
       <div class="finding">
         <span class="n glow">{signed(tone.delta_auc, 2)}</span>
         <p><b>What the news says helps, a little.</b> Headline tone added {signed(tone.delta_auc)} AUC on a {cohortSize}-startup sample. Borderline, and not significant after correcting for multiple tests.</p>
+        <Source path="results/significance.csv" />
       </div>
     </div>
 
@@ -91,7 +95,7 @@ const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance"
             </g>
           ))}
         </svg>
-        <figcaption>Cross-validated AUC, mean ± one standard deviation across five folds. The top four rows use all {population.toLocaleString("en-US")} startups, the rest the {cohortSize}-startup news cohort. Highlighted: the original feature set with the leak.</figcaption>
+        <figcaption>Cross-validated AUC, mean ± one standard deviation across five folds. The top four rows use all {population.toLocaleString("en-US")} startups, the rest the {cohortSize}-startup news cohort. Highlighted: the original feature set with the leak. <Source path="results/cv_summary.csv" /></figcaption>
       </figure>
       <figure class="figure">
         <svg class="chart" viewBox={`0 0 720 ${forestRows.at(-1).y + 44}`} role="img" aria-label="Paired bootstrap differences in AUC with 95% intervals">
@@ -105,7 +109,7 @@ const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance"
             </g>
           ))}
         </svg>
-        <figcaption>Change in AUC when one group of features is added or removed, with 95% intervals from 2,000 paired bootstrap resamples. Highlighted intervals exclude zero.</figcaption>
+        <figcaption>Change in AUC when one group of features is added or removed, with 95% intervals from 2,000 paired bootstrap resamples. Highlighted intervals exclude zero. <Source path="results/significance.csv" /></figcaption>
       </figure>
       <figure class="figure">
         <svg class="chart" viewBox={`0 0 720 ${weights.slice(0, 8).length * 30 + 20}`} role="img" aria-label="Largest standardised logistic regression weights">
@@ -118,7 +122,7 @@ const featured = ["Software", "Mobile", "E-Commerce", "Biotechnology", "Finance"
             </g>
           ))}
         </svg>
-        <figcaption>The largest weights in the news-cohort model, with every feature standardised so their sizes compare. Highlighted weights push towards closing.</figcaption>
+        <figcaption>The largest weights in the news-cohort model, with every feature standardised so their sizes compare. Highlighted weights push towards closing. <Source path="results/cohort_lr_coefficients.csv" /></figcaption>
       </figure>
     </details>
   </section>
