@@ -31,3 +31,19 @@ export const structural = (() => {
   const base = benchmark.candidates.find((c) => c.name === benchmark.baseline);
   return { live, base };
 })();
+
+// The population funnel, read from the Phase 2 report so the site can't drift from it.
+export const funnel = (() => {
+  const r = read("results", "phase2_report.txt");
+  const num = (re) => +r.match(re)[1].replace(/,/g, "");
+  return {
+    raw: num(/Rows loaded:\s*([\d,]+)/),
+    excluded: num(/Excluded \(acquired \/ ipo \/ null \/ other\):\s*([\d,]+)/),
+    retained: num(/Retained \(closed=0 or operating=1\)\s*:\s*([\d,]+)/),
+    foundedBefore: num(/with founded_at < T\s*:\s*([\d,]+)/),
+    fundedBefore: num(/with first_funding_at < T\s*:\s*([\d,]+)/),
+    eligible: num(/satisfying BOTH \(eligible\)\s*:\s*([\d,]+)/),
+    closed: num(/closed\s*\(0\)\s*:\s*([\d,]+)/),
+    lastFundingAfter: num(/last_funding_at nulled as post-cutoff[^:]*:\s*([\d,]+)/),
+  };
+})();
