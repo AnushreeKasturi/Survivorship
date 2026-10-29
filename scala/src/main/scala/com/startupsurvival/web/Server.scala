@@ -165,8 +165,10 @@ object Server {
 
   private def send(ex: HttpExchange, status: Int, contentType: String, body: Array[Byte]): Unit = {
     ex.getResponseHeaders.set("Content-Type", contentType)
-    ex.sendResponseHeaders(status, if (body.isEmpty) -1 else body.length)
-    if (body.nonEmpty) ex.getResponseBody.write(body)
+    // HEAD (Render's health check) gets headers only.
+    val sendBody = body.nonEmpty && ex.getRequestMethod != "HEAD"
+    ex.sendResponseHeaders(status, if (sendBody) body.length else -1)
+    if (sendBody) ex.getResponseBody.write(body)
     ex.close()
   }
 

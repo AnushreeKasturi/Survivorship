@@ -4,3 +4,5 @@ web/dist
 web/.astro
 scala/target
 scala/project/target
+# local datasets: the image only needs results/ and startups/
+data

@@ -1,60 +1,84 @@
 ---
 import Base from "../layouts/Base.astro";
 import Source from "../components/Source.astro";
-import { caseStudies, structural } from "../lib/data.js";
+import { caseStudies, model } from "../lib/data.js";
 
-const cases = caseStudies.cases;
-const hits = cases.filter((c) => c.correct).length;
-const closed = cases.filter((c) => c.profile.outcome === "closed").length;
+const hits = caseStudies.cases.filter((c) => c.correct).length;
+
+const featured = ["Software", "Mobile", "E-Commerce", "Finance", "Health Care", "Education", "SaaS", "Games"];
+const filters = [["all", "All"], ["ending", "Known endings"], ["watchlist", "Watchlist"], ["visitor", "Suggested"], ["queued", "In the queue"]];
 ---
 
-<Base title="Real startups · Survivorship" description="Real startups scored by the pipeline: eight with known endings and a live watchlist." page="startups">
-  <section style="padding-bottom: 40px">
+<Base title="Startups · Survivorship" description="Every startup the pipeline has scored: eight known endings, a live watchlist, and visitor suggestions." page="startups">
+  <section style="padding-bottom: 30px">
     <div class="head center" style="margin: 0 auto">
-      <h1 class="h1">Real startups</h1>
-      <p class="lede">How the pipeline does on companies whose story we already know, and on some whose story is still being written.</p>
-      <nav class="tabs" aria-label="On this page">
-        <a href="#endings">Known endings</a>
-        <a href="#watchlist">Watchlist</a>
-        <a href="/archive/">Full archive</a>
-      </nav>
-    </div>
-  </section>
-
-  <section id="endings" style="padding-top: 60px">
-    <div class="head center">
-      <h2 class="h2">Known endings</h2>
+      <h1 class="h1">Startups</h1>
       <p class="lede">
-        {closed} that closed and {cases.length - closed} that made it, each scored as of a date when its fate was still open.
-        The {caseStudies.model ?? "model"} calls <span class="glow">{hits} of {cases.length}</span> correctly; the logistic regression
-        it replaced called {structural.base.caseStudies.correctAt05}. Eight endings are too few to judge a model by, so the
-        <a href="/how-it-works/#evaluation">cross-validated benchmark</a> is what decides.
+        Eight startups with known endings, scored as of a date when their fate was still open (the model called {hits} of
+        {" "}{caseStudies.cases.length}), a watchlist re-checked every six hours, and the ones visitors suggested.{" "}
+        <a href="/research/#cases">What these show, and don't</a>
       </p>
-      <p><Source path="results/case_studies.json" /> <Source path="results/benchmark.json" /></p>
+      <p class="status" id="startups-status" aria-live="polite">Loading…</p>
     </div>
-    <ul class="tiles" id="cases"></ul>
-    <script type="application/json" id="case-data" set:html={JSON.stringify(cases).replace(/</g, "\\u003c")}></script>
-    <details class="more" style="max-width: 1100px">
-      <summary>How these were chosen and scored</summary>
-      <p class="muted">
-        Founding dates, first funding rounds and outcomes were checked against the public sources linked in each card; dates known
-        only to the year are set to 1 July. Each startup is scored two years after its first round, or six months before it shut
-        down if that came sooner, using only news from the two years before that date, the same shape as the training data.
-        The model is chosen by a cross-validated benchmark on all {structural.live ? "22,075" : ""} training startups, never by these eight:
-        the random forest reaches AUC {structural.live.aucMean.toFixed(3)} against {structural.base.aucMean.toFixed(3)} for logistic regression.
-      </p>
-    </details>
   </section>
 
-  <section id="watchlist">
-    <div class="head center">
-      <h2 class="h2">The watchlist</h2>
-      <p class="lede">Well-known startups, re-checked every six hours against Google News and a growing GDELT news archive.</p>
+  <section style="padding-top: 20px">
+    <div class="toolbar">
+      <div class="tabs" role="group" aria-label="Show">
+        {filters.map(([key, label]) => <button type="button" class="tab" data-filter={key} aria-pressed={key === "all" ? "true" : "false"}>{label}</button>)}
+      </div>
+      <label class="search"><span class="sr">Search startups</span><input id="startups-search" type="search" placeholder="Search by name" /></label>
     </div>
-    <p class="status" id="watch-status" aria-live="polite">Loading the latest check…</p>
-    <p class="offline center" hidden>The watchlist needs the Scala server. From <code>scala/</code>, run <code>sbt "runMain com.startupsurvival.web.Server"</code> and open <code>localhost:8080/startups/</code>.</p>
-    <ul class="tiles" id="watch-curated"></ul>
-    <div class="actions"><a class="btn ghost" href="/archive/">See every startup, or suggest one</a></div>
+    <p class="offline center" hidden>Watchlist, suggested and queued startups need the Scala server; known endings are shown below.</p>
+    <p class="center"><Source path="results/case_studies.json" label="known endings" /></p>
+    <ul class="tiles" id="all-startups"></ul>
+    <script type="application/json" id="case-data" set:html={JSON.stringify(caseStudies.cases).replace(/</g, "\\u003c")}></script>
+  </section>
+
+  <section id="suggest">
+    <div class="head center">
+      <h2 class="h2">Suggest a startup</h2>
+      <p class="lede">It joins the queue and is scored at the next check: within ten minutes while the server is awake, otherwise at the next six-hourly run.</p>
+    </div>
+    <form class="card" id="suggest-form" style="max-width: 720px; margin: 0 auto">
+      <div class="fields">
+        <div class="field full">
+          <label for="t-name">Company name</label>
+          <input id="t-name" name="name" required minlength="2" maxlength="60" placeholder="As it appears in the press" />
+        </div>
+        <div class="field">
+          <label for="t-founded">Founded</label>
+          <input id="t-founded" name="foundedAt" type="date" required />
+        </div>
+        <div class="field">
+          <label for="t-first">First funding round</label>
+          <input id="t-first" name="firstFundingAt" type="date" required />
+        </div>
+        <details class="inline full">
+          <summary>More details (optional)</summary>
+          <div class="fields">
+            <div class="field full">
+              <label for="t-country">Country</label>
+              <select id="t-country" name="country">
+                {model.countries.map((c) => <option selected={c === "USA"}>{c}</option>)}
+                <option value="">Somewhere else</option>
+              </select>
+            </div>
+            <fieldset class="chips full">
+              <legend>What does it do?</legend>
+              {featured.map((c) => <label class="chip"><input type="checkbox" name="categories" value={c} /><span>{c}</span></label>)}
+            </fieldset>
+            <div class="field full">
+              <label for="t-keywords">Known for, comma separated (helps when the name is an everyday word)</label>
+              <input id="t-keywords" name="keywords" maxlength="140" placeholder="A founder's name, a product" />
+            </div>
+          </div>
+        </details>
+      </div>
+      <div class="actions" style="justify-content: flex-start; margin-top: 24px"><button>Add to the queue</button></div>
+      <p class="error" role="alert"></p>
+      <p class="note" id="suggest-done" aria-live="polite"></p>
+    </form>
   </section>
 
   <script>import "../scripts/startups.js";</script>

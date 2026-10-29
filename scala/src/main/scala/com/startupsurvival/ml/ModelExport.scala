@@ -3,7 +3,7 @@ package com.startupsurvival.ml
 import java.io.{File, PrintWriter}
 import java.nio.file.Files
 import org.apache.spark.ml.classification.RandomForestClassificationModel
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.json4s.DefaultFormats
 import org.json4s.jackson.Serialization.write
 import com.startupsurvival.spark.FeatureSets

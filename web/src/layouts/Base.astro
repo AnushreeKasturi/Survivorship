@@ -11,8 +11,8 @@ import "../styles/global.css";
 const { title, description, page } = Astro.props;
 const links = [
   ["/", "Overview", "home"],
+  ["/research/", "Research", "research"],
   ["/startups/", "Startups", "startups"],
-  ["/archive/", "Archive", "archive"],
   ["/how-it-works/", "How it works", "how"],
 ];
 ---
@@ -24,7 +24,7 @@ const links = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#f4f6f9" />
+    <meta name="theme-color" content="#f3f6f3" />
     <script is:inline>
       // Apply the saved theme before first paint so the page doesn't flash.
       try { if (localStorage.getItem("theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch (e) {}
