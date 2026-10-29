@@ -53,6 +53,10 @@ object NewsCollector {
     finally source.close()
   }
 
+  /** Google's RSS escapes &, quotes and angle brackets in titles; &amp; goes last so nothing is decoded twice. */
+  def unescape(s: String): String =
+    s.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'").replace("&amp;", "&")
+
   /** Non-greedy matches scoped to one <item>; CDATA wrappers stripped. */
   def parseRssItems(rssXml: String): List[RawNewsItem] = {
     val itemPattern = "(?s)<item>(.*?)</item>".r
@@ -75,7 +79,7 @@ object NewsCollector {
       .map(_.group(1))
       .flatMap { itemBody =>
         for {
-          title <- firstMatch(titlePattern, itemBody)
+          title <- firstMatch(titlePattern, itemBody).map(unescape)
           link  <- firstMatch(linkPattern, itemBody)
         } yield RawNewsItem(
           title = title,

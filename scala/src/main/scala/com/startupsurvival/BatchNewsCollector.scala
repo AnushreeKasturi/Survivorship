@@ -53,10 +53,7 @@ object BatchNewsCollector {
 
   /** Tabs/newlines would break the TSV; basic HTML entities appear in
    * Google News titles. */
-  def clean(s: String): String =
-    s.replace("&amp;", "&").replace("&quot;", "\"").replace("&#39;", "'")
-      .replace("&lt;", "<").replace("&gt;", ">")
-      .replaceAll("[\\t\\r\\n]+", " ").trim
+  def clean(s: String): String = NewsCollector.unescape(s).replaceAll("[\\t\\r\\n]+", " ").trim
 
   /**
    * BALANCED CASE-CONTROL ORDER. The first full-population run was

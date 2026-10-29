@@ -10,7 +10,7 @@
   "dependencies": {
     "@fontsource/geist": "5.3.0",
     "@fontsource/geist-mono": "5.3.0",
-    "@fontsource/instrument-serif": "5.3.0",
+    "@fontsource/sora": "5.3.0",
     "astro": "7.3.8",
     "gsap": "3.15.0"
   }

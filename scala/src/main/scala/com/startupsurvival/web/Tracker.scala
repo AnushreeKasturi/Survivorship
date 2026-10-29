@@ -10,7 +10,7 @@ import scala.util.Try
 import org.json4s.{DefaultFormats, Formats}
 import org.json4s.jackson.JsonMethods.parse
 import org.json4s.jackson.Serialization.{write, writePretty}
-import com.startupsurvival.{NameMatcher, NewsCollector}
+import com.startupsurvival.{NameMatcher, NewsCollector, NewsRelevance}
 import com.startupsurvival.spark.NewsRDD
 import Server.{Headline, Models, PredictRequest}
 
@@ -64,16 +64,19 @@ object Tracker {
     val google = fetched.toOption.toList.flatMap(NewsCollector.parseRssItems).flatMap { item =>
       NewsCollector.parsePubDate(item.pubDateRaw)
         .filter(d => d.isBefore(asOf) && !d.isBefore(windowStart))
-        .map(d => (d, NewsRDD.stripSourceSuffix(item.title, item.source.getOrElse(""))))
+        .map(d => (d, NewsRDD.stripSourceSuffix(item.title, item.source.getOrElse("")), item.source.getOrElse("")))
     }
-    val gdelt = archive.toList.flatMap(_.articlesFor(p, windowStart, asOf)).map(a => (LocalDate.parse(a.date), a.title))
+    val gdelt = archive.toList.flatMap(_.articlesFor(p, windowStart, asOf)).map(a => (LocalDate.parse(a.date), a.title, a.source))
     val raw = google ++ gdelt
-    val accepted = raw
-      .filter { case (_, text) => matchConfidence(p, text) >= NameMatcher.AcceptanceThreshold }
+    val named = raw
+      .filter { case (_, text, _) => matchConfidence(p, text) >= NameMatcher.AcceptanceThreshold }
       .groupBy(_._2.toLowerCase).values.map(_.minBy(_._1.toEpochDay)) // Google repeats titles across outlets
       .toList.sortBy(_._1.toEpochDay)
+    // Naming the company isn't enough: only business news about it counts (NewsRelevance).
+    val judged = named.map { case h @ (_, text, source) => (h, NewsRelevance.judge(text, source)) }
+    val accepted = judged.collect { case ((d, text, source), v) if v.keep => Headline(d.toString, text, Some(source).filter(_.nonEmpty)) }
       .takeRight(50)
-      .map { case (d, text) => Headline(d.toString, text) }
+    val setAside = judged.filterNot(_._2.keep)
 
     val prediction = Server.predict(
       PredictRequest(p.foundedAt, p.firstFundingAt, Some(p.categories), p.country, Some(accepted)), models, asOf, bounds)
@@ -85,6 +88,9 @@ object Tracker {
       "ambiguousName" -> NameMatcher.isAmbiguousName(p.name),
       "scopedSearch" -> p.keywords.nonEmpty,
       "sources" -> Map("googleNews" -> google.size, "gdelt" -> gdelt.size),
+      "nameMatched" -> named.size,
+      "setAside" -> setAside.groupBy(_._2.reason).map { case (reason, hs) =>
+        Map("reason" -> reason, "count" -> hs.size, "examples" -> hs.takeRight(3).map(_._1._2)) }.toList.sortBy(-_("count").asInstanceOf[Int]),
       "newsError" -> fetched.failed.toOption.map(e => s"${e.getClass.getSimpleName}: ${e.getMessage}")
     )
   }

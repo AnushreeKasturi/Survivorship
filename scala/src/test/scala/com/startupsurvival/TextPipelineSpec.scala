@@ -138,4 +138,28 @@ class TextPipelineSpec extends AnyFunSuite {
     assert(Gdelt.parseLine("too\tfew").isEmpty)
     assert(Gdelt.slot(java.time.Instant.parse("2026-10-28T12:44:59Z")) == java.time.Instant.parse("2026-10-28T12:30:00Z"))
   }
+
+  test("RSS titles are unescaped once") {
+    val item = "<item><title>Users &amp; Revenue &quot;2026&quot;</title><link>https://x</link></item>"
+    assert(NewsCollector.parseRssItems(item).map(_.title) == List("Users & Revenue \"2026\""))
+    assert(NewsCollector.unescape("&amp;quot;") == "&quot;")
+  }
+
+  test("news relevance: toy listings, show reviews and SEO pages are set aside; business news is kept") {
+    import NewsRelevance.judge
+    // the real headlines that exposed the problem
+    assert(!judge("Revamped Hatsune Miku Figure is Figma No. 200!").keep)
+    assert(!judge("Rocket Toy Review: Figma Link").keep)
+    assert(!judge("Quibi review: No one asked for this - but it's kind of great").keep)
+    assert(!judge("Quibi: The Five Best Shows on the New Service").keep)
+    assert(!judge("Lovable Statistics (2026) - Number of Users & Revenue Data").keep)
+    assert(!judge("Lovable raises $200M", "Reddit").keep)
+    // and the business news that should stay
+    assert(judge("Stripe leads $102 million funding round for online checkout start-up Fast").keep)
+    assert(judge("Airbnb Raises Cash to Expand Budget-Travel Service").keep)
+    assert(judge("Peter Thiel invests in Collison brothers' latest venture Stripe").keep)
+    assert(judge("Startup Fast hires Jason Alderman as first CCO").keep)
+    assert(judge("Convoy shuts down after failing to find a buyer").keep)
+    assert(judge("Zepto raises Rs 2,500 crore").keep)
+  }
 }

@@ -79,7 +79,7 @@ object Server {
       }.getOrElse(Design)
   }
 
-  final case class Headline(date: String, text: String)
+  final case class Headline(date: String, text: String, source: Option[String] = None)
   final case class PredictRequest(
       foundedAt: String,
       firstFundingAt: String,
@@ -137,7 +137,7 @@ object Server {
       "financial" -> financial,
       "maturity" -> bounds.describe(financial.yearsSinceFirstFunding),
       "sentiment" -> sentimentFeatures,
-      "headlines" -> headlines.map(h => sentiment(h.text) + ("text" -> h.text) + ("date" -> h.date))
+      "headlines" -> headlines.map(h => sentiment(h.text) + ("text" -> h.text) + ("date" -> h.date) + ("source" -> h.source))
     )
   }
 

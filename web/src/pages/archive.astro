@@ -24,7 +24,7 @@ const filters = [["all", "All"], ["ending", "Known endings"], ["watchlist", "Wat
     </div>
     <p class="offline center" hidden>Watchlist, suggested and queued startups need the Scala server; known endings are shown below.</p>
     <ul class="tiles" id="archive"></ul>
-    <script type="application/json" id="case-data" set:html={JSON.stringify(caseStudies.cases)}></script>
+    <script type="application/json" id="case-data" set:html={JSON.stringify(caseStudies.cases).replace(/</g, "\\u003c")}></script>
   </section>
 
   <section id="suggest">

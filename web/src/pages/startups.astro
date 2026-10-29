@@ -31,7 +31,7 @@ const closed = cases.filter((c) => c.profile.outcome === "closed").length;
       </p>
     </div>
     <ul class="tiles" id="cases"></ul>
-    <script type="application/json" id="case-data" set:html={JSON.stringify(cases)}></script>
+    <script type="application/json" id="case-data" set:html={JSON.stringify(cases).replace(/</g, "\\u003c")}></script>
     <details class="more" style="max-width: 1100px">
       <summary>How these were chosen and scored</summary>
       <p class="muted">
