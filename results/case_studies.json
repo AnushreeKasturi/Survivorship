@@ -1,8 +1,10 @@
 {
-  "generatedAt" : "2026-10-28T16:17:09.525037Z",
-  "threshold" : 0.5,
+  "generatedAt" : "2026-10-29T08:55:56.671547Z",
+  "threshold" : 0.4960750704679032,
+  "model" : "random forest, 100 trees",
   "cases" : [ {
     "asOf" : "2020-04-21",
+    "model" : "random forest, 100 trees",
     "maturity" : {
       "establishedAfter" : 10.0,
       "source" : "design rule: 5 and 10 years after the first round",
@@ -10,24 +12,24 @@
       "olderAfter" : 5.0,
       "level" : "young"
     },
-    "correct" : false,
+    "correct" : true,
     "sentiment" : {
       "permalink" : "/demo",
       "newsCount" : 50,
-      "positiveNewsCount" : 10,
+      "positiveNewsCount" : 5,
       "negativeNewsCount" : 0,
-      "neutralNewsCount" : 40,
-      "positiveRatio" : 0.2,
+      "neutralNewsCount" : 45,
+      "positiveRatio" : 0.1,
       "negativeRatio" : 0.0,
-      "averageSentiment" : 0.2,
+      "averageSentiment" : 0.1,
       "recentSentiment" : 0.0,
-      "sentimentTrend" : -0.07999999999999999,
-      "sentimentVolatility" : 0.4040610178208843,
+      "sentimentTrend" : -0.039999999999999994,
+      "sentimentVolatility" : 0.303045763365663,
       "newsVolumeTrend" : 50.0
     },
-    "checkedAt" : "2026-10-28T16:16:55.412230Z",
-    "financialOnly" : 0.5232091581502474,
-    "financialSentiment" : 0.11205526625734963,
+    "checkedAt" : "2026-10-29T08:55:41.691693Z",
+    "financialOnly" : 0.4921962497734804,
+    "financialSentiment" : 0.018735118634895808,
     "scopedSearch" : false,
     "profile" : {
       "name" : "Quibi",
@@ -41,169 +43,9 @@
       "sources" : [ "https://en.wikipedia.org/wiki/Quibi", "https://news.crunchbase.com/startups/quibi-shutting-down/" ],
       "keywords" : [ ]
     },
-    "rawHeadlines" : 56,
+    "rawHeadlines" : 100,
+    "threshold" : 0.4960750704679032,
     "headlines" : [ {
-      "positiveTerms" : [ "unicorn" ],
-      "score" : 1,
-      "text" : "Quibi: The next Go90, or streaming unicorn?",
-      "date" : "2019-06-04",
-      "class" : "Positive",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ "launch" ],
-      "score" : 1,
-      "text" : "Jeffrey Katzenberg, Meg Whitman Offer Details on Quibi Launch, Pricing",
-      "date" : "2019-06-08",
-      "class" : "Positive",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Jeffrey Katzenberg and Meg Whitman say video venture Quibi is in a category of its own",
-      "date" : "2019-06-08",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "All the projects coming to Quibi, Jeffrey Katzenberg's bite-size streaming service",
-      "date" : "2019-06-13",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "What Is Jeffrey Katzenberg’s Quibi All About, and Why Should You Care?",
-      "date" : "2019-06-14",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Quibi Has Already Booked $100 Million in Ad Sales, Jeffrey Katzenberg and Meg Whitman Say",
-      "date" : "2019-06-19",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Quibi: All the Programming (So Far) Set for Jeffrey Katzenberg’s Shortform Streaming Platform",
-      "date" : "2019-07-01",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Quibi is a built-for-millennials streaming service. But will they pay $5 a month?",
-      "date" : "2019-08-01",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ "raises" ],
-      "score" : 1,
-      "text" : "Quibi raises $400 million to make more bite-sized shows",
-      "date" : "2020-01-08",
-      "class" : "Positive",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Quibi's secret weapon: Videos that work in portrait and landscape mode",
-      "date" : "2020-01-08",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Why Quibi’s snack-size streaming service could actually live up to the hype",
-      "date" : "2020-01-08",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Quibi streaming service will cost $5 a month with ads, or $8 without",
-      "date" : "2020-01-08",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Quibi: Everything You Need To Know About Jeffrey Katzenberg's New Short-Form Streaming Service",
-      "date" : "2020-01-08",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Quibi introduces tech for combining horizontal and vertical viewing",
-      "date" : "2020-01-09",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "John Travolta to Star Opposite Kevin Hart in Quibi Action Series ‘Die Hart’",
-      "date" : "2020-02-04",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "What Is Quibi, the New Platform Taking on Big Streaming?",
-      "date" : "2020-03-06",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "What is Quibi? What to know about the company shaking up streaming",
-      "date" : "2020-03-06",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "What Is Quibi? Everything You Need to Know About the 'Quick Bite' Streaming Service",
-      "date" : "2020-03-23",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ "launch" ],
-      "score" : 1,
-      "text" : "As Jeffrey Katzenberg’s Quibi Races Toward Launch, Will a Changed World Help or Hurt?",
-      "date" : "2020-03-26",
-      "class" : "Positive",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ "launching" ],
-      "score" : 1,
-      "text" : "Jeffrey Katzenberg On Launching Quibi During A Pandemic, Recruiting J.J. Abrams",
-      "date" : "2020-03-27",
-      "class" : "Positive",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ "launch" ],
-      "score" : 1,
-      "text" : "Quibi's Launch Lineup: Every Show and 'Movie in Chapters' Coming to the New Streaming Service",
-      "date" : "2020-04-02",
-      "class" : "Positive",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Quibi Is Jeffrey Katzenberg’s $1.7 Billion Gamble",
-      "date" : "2020-04-03",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Quibi app review: shifting landscape",
-      "date" : "2020-04-05",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
       "positiveTerms" : [ ],
       "score" : 0,
       "text" : "Quibi review: No one asked for this — but it's kind of great",
@@ -220,6 +62,20 @@
     }, {
       "positiveTerms" : [ ],
       "score" : 0,
+      "text" : "Quibi host Chance the Rapper knows you watch ‘Punk’d’ to see celebrities get mad",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi’s Mobile-Only Viewing Is Already Frustrating Some People",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
       "text" : "Quibi Is Finally Here. Wait, What’s Quibi?",
       "date" : "2020-04-06",
       "class" : "Neutral",
@@ -227,14 +83,49 @@
     }, {
       "positiveTerms" : [ "best" ],
       "score" : 1,
-      "text" : "Ranking The New Quibi Shows From Worst To Best",
+      "text" : "Quibi: The Five Best Shows on the New Service",
       "date" : "2020-04-06",
       "class" : "Positive",
       "negativeTerms" : [ ]
     }, {
       "positiveTerms" : [ ],
       "score" : 0,
+      "text" : "The key ingredient in Quibi’s cannon-blasted cooking show? Host Tituss Burgess",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi reviews: Little shows add up to mostly satisfying entertainment",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi Is for Mobile Streaming and Mobile Streaming Only",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
       "text" : "What is Quibi?",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "L.A. chef of Quibi’s ‘Shape of Pasta’ hopes it angers some. That means it’s working",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "How to watch Quibi, the new streaming platform",
       "date" : "2020-04-06",
       "class" : "Neutral",
       "negativeTerms" : [ ]
@@ -248,6 +139,13 @@
     }, {
       "positiveTerms" : [ ],
       "score" : 0,
+      "text" : "What Is Quibi? Everything You Need to Know",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
       "text" : "Quibi's short video service for phones is better than I thought it'd be — except for the ads",
       "date" : "2020-04-06",
       "class" : "Neutral",
@@ -255,21 +153,42 @@
     }, {
       "positiveTerms" : [ ],
       "score" : 0,
-      "text" : "Dishmantled Review: Blast More of This Quibi Show Into My Face",
+      "text" : "'Murder House Flip' on Quibi: How they found homes, owners",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launches" ],
+      "score" : 1,
+      "text" : "Short-form streamer Quibi launches mid-pandemic",
+      "date" : "2020-04-06",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Here's what it's like to use Quibi, the new streaming app that only works on your iPhone or Android smartphone",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "launch" ],
+      "score" : 1,
+      "text" : "Quibi Launch: All the Shows Available to Watch on the New Streaming Service",
+      "date" : "2020-04-06",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi Shows Reviewed: From ‘Chrissy’s Court’ to Sophie Turner’s ‘Survive’",
       "date" : "2020-04-06",
       "class" : "Neutral",
       "negativeTerms" : [ ]
     }, {
       "positiveTerms" : [ ],
       "score" : 0,
-      "text" : "Everything You Need to Know About Quibi, the New Short-Form Streaming Service",
-      "date" : "2020-04-06",
-      "class" : "Neutral",
-      "negativeTerms" : [ ]
-    }, {
-      "positiveTerms" : [ ],
-      "score" : 0,
-      "text" : "Review: New Streamer Quibi Shows Off Its Short Shorts",
+      "text" : "Quibi Quick Review Roundup: Comedy Offerings Are Uneven, but Promising",
       "date" : "2020-04-06",
       "class" : "Neutral",
       "negativeTerms" : [ ]
@@ -283,6 +202,13 @@
     }, {
       "positiveTerms" : [ ],
       "score" : 0,
+      "text" : "What Is Quibi? UPDATE: Quibi Is Dead",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
       "text" : "What is Quibi? The new short-form streaming service for your phone, explained.",
       "date" : "2020-04-06",
       "class" : "Neutral",
@@ -290,7 +216,7 @@
     }, {
       "positiveTerms" : [ ],
       "score" : 0,
-      "text" : "Quibi: New video streaming service makes a bet on short-form entertainment",
+      "text" : "How to Get Quibi for Free: 90-Day Trial, T-Mobile Deal",
       "date" : "2020-04-06",
       "class" : "Neutral",
       "negativeTerms" : [ ]
@@ -318,6 +244,20 @@
     }, {
       "positiveTerms" : [ ],
       "score" : 0,
+      "text" : "Quibi: Here’s what you need to know about the new streaming service | CNN Business",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Tituss Burgess on ‘Dishmantled,’ his insane new Quibi cooking competition",
+      "date" : "2020-04-06",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
       "text" : "Quibi is YouTube for people who hate YouTube. Let us explain",
       "date" : "2020-04-07",
       "class" : "Neutral",
@@ -332,6 +272,13 @@
     }, {
       "positiveTerms" : [ ],
       "score" : 0,
+      "text" : "Now is not the time for Quibi, the new streaming service for your phone",
+      "date" : "2020-04-07",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
       "text" : "An Exhaustive Guide to Every Celebrity You’re Going To See On Quibi",
       "date" : "2020-04-07",
       "class" : "Neutral",
@@ -339,8 +286,29 @@
     }, {
       "positiveTerms" : [ ],
       "score" : 0,
-      "text" : "A Taste Test Of Quibi's New Bite-Sized Food Programming",
+      "text" : "Quibi Blocking Screenshots Can Prevent It From Going Viral",
       "date" : "2020-04-08",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Christoph Waltz Explains the Benefits of the Quibi Format",
+      "date" : "2020-04-08",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi’s Turnstyle Tech Battle Sees Eko Score Accelerated Hearing Date For Preliminary Injunction – Update",
+      "date" : "2020-04-08",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi vs. Quarantine: The Antithesis of the Streaming Wars — TV Podcast",
+      "date" : "2020-04-09",
       "class" : "Neutral",
       "negativeTerms" : [ ]
     }, {
@@ -351,11 +319,11 @@
       "class" : "Neutral",
       "negativeTerms" : [ ]
     }, {
-      "positiveTerms" : [ "best" ],
-      "score" : 1,
-      "text" : "The Best Quibi Shows to Stream Now (October 2020)",
-      "date" : "2020-04-13",
-      "class" : "Positive",
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Comedy Central’s Reno 911! Finally Announces Quibi Release Date",
+      "date" : "2020-04-10",
+      "class" : "Neutral",
       "negativeTerms" : [ ]
     }, {
       "positiveTerms" : [ ],
@@ -374,8 +342,43 @@
     }, {
       "positiveTerms" : [ ],
       "score" : 0,
-      "text" : "WWE superstars Becky Lynch and Sonya Deville on Quibi series 'Fight Like a Girl'",
-      "date" : "2020-04-14",
+      "text" : "Quibi Had 1.7 Million Downloads In First Week, Meg Whitman Says",
+      "date" : "2020-04-13",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Snapchat Founder Series Not Moving Forward at Quibi (EXCLUSIVE)",
+      "date" : "2020-04-13",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Quibi Hits 1.75 Million Downloads in First Week, CEO Meg Whitman Says",
+      "date" : "2020-04-13",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "We need to talk about \"The Golden Arm\" episode of Quibi's 50 States Of Fright",
+      "date" : "2020-04-15",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "‘Teenage Mutant Ninja Turtles: Out of the Shadows’ Director Developing Food Sketch Show at Quibi (EXCLUSIVE)",
+      "date" : "2020-04-16",
+      "class" : "Neutral",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ ],
+      "score" : 0,
+      "text" : "Dummy Trailer Has Anna Kendrick Making an Unlikley New Friend on Quibi",
+      "date" : "2020-04-16",
       "class" : "Neutral",
       "negativeTerms" : [ ]
     }, {
@@ -388,14 +391,15 @@
     }, {
       "positiveTerms" : [ ],
       "score" : 0,
-      "text" : "Let Me Screenshot Your Quibi Show, Cowards",
-      "date" : "2020-04-17",
+      "text" : "Dane DeHaan Talks Quibi, The Stranger, and Shares Thoughts on Joker",
+      "date" : "2020-04-18",
       "class" : "Neutral",
       "negativeTerms" : [ ]
     } ],
     "ambiguousName" : false
   }, {
     "asOf" : "2015-07-01",
+    "model" : "random forest, 100 trees",
     "maturity" : {
       "establishedAfter" : 10.0,
       "source" : "design rule: 5 and 10 years after the first round",
@@ -403,7 +407,7 @@
       "olderAfter" : 5.0,
       "level" : "young"
     },
-    "correct" : false,
+    "correct" : true,
     "sentiment" : {
       "permalink" : "/demo",
       "newsCount" : 0,
@@ -414,8 +418,8 @@
       "negativeRatio" : 0.0,
       "averageSentiment" : 0.0
     },
-    "checkedAt" : "2026-10-28T16:16:56.975868Z",
-    "financialOnly" : 0.6162086883874595,
+    "checkedAt" : "2026-10-29T08:55:43.419528Z",
+    "financialOnly" : 0.47131939609623463,
     "scopedSearch" : false,
     "profile" : {
       "name" : "Juicero",
@@ -430,10 +434,12 @@
       "keywords" : [ ]
     },
     "rawHeadlines" : 2,
+    "threshold" : 0.4960750704679032,
     "headlines" : [ ],
     "ambiguousName" : false
   }, {
     "asOf" : "2021-10-05",
+    "model" : "random forest, 100 trees",
     "maturity" : {
       "establishedAfter" : 10.0,
       "source" : "design rule: 5 and 10 years after the first round",
@@ -444,21 +450,21 @@
     "correct" : false,
     "sentiment" : {
       "permalink" : "/demo",
-      "newsCount" : 6,
-      "positiveNewsCount" : 5,
+      "newsCount" : 7,
+      "positiveNewsCount" : 6,
       "negativeNewsCount" : 0,
       "neutralNewsCount" : 1,
-      "positiveRatio" : 0.8333333333333334,
+      "positiveRatio" : 0.8571428571428571,
       "negativeRatio" : 0.0,
-      "averageSentiment" : 0.8333333333333334,
+      "averageSentiment" : 0.8571428571428571,
       "recentSentiment" : 0.0,
-      "sentimentTrend" : -0.33333333333333337,
-      "sentimentVolatility" : 0.408248290463863,
-      "newsVolumeTrend" : 2.0
+      "sentimentTrend" : -0.25,
+      "sentimentVolatility" : 0.3779644730092272,
+      "newsVolumeTrend" : 1.0
     },
-    "checkedAt" : "2026-10-28T16:16:58.518322Z",
-    "financialOnly" : 0.5192890238531696,
-    "financialSentiment" : 0.7922024938710062,
+    "checkedAt" : "2026-10-29T08:55:45.285695Z",
+    "financialOnly" : 0.5116034944647353,
+    "financialSentiment" : 0.867359735847457,
     "scopedSearch" : true,
     "profile" : {
       "name" : "Fast",
@@ -472,12 +478,20 @@
       "sources" : [ "https://www.wfae.org/2022-04-05/fast-the-easy-checkout-startup-shuts-down-after-burning-through-investors-money", "https://www.fintechfutures.com/fintech/stripe-backed-one-click-checkout-fintech-fast-folds" ],
       "keywords" : [ "Domm Holland", "one-click checkout" ]
     },
-    "rawHeadlines" : 9,
+    "rawHeadlines" : 10,
+    "threshold" : 0.4960750704679032,
     "headlines" : [ {
       "positiveTerms" : [ "hires" ],
       "score" : 1,
       "text" : "Startup Fast hires Jason Alderman as first CCO",
       "date" : "2020-04-07",
+      "class" : "Positive",
+      "negativeTerms" : [ ]
+    }, {
+      "positiveTerms" : [ "secured" ],
+      "score" : 1,
+      "text" : "Payments startup Fast has secured A$30 million in a Series A round led by Stripe",
+      "date" : "2020-07-27",
       "class" : "Positive",
       "negativeTerms" : [ ]
     }, {
@@ -519,6 +533,7 @@
     "ambiguousName" : true
   }, {
     "asOf" : "2017-07-01",
+    "model" : "random forest, 100 trees",
     "maturity" : {
       "establishedAfter" : 10.0,
       "source" : "design rule: 5 and 10 years after the first round",
@@ -526,7 +541,7 @@
       "olderAfter" : 5.0,
       "level" : "young"
     },
-    "correct" : false,
+    "correct" : true,
     "sentiment" : {
       "permalink" : "/demo",
       "newsCount" : 2,
@@ -541,8 +556,8 @@
       "sentimentVolatility" : 0.7071067811865476,
       "newsVolumeTrend" : 2.0
     },
-    "checkedAt" : "2026-10-28T16:17:01.669375Z",
-    "financialOnly" : 0.5486373030559604,
+    "checkedAt" : "2026-10-29T08:55:47.070094Z",
+    "financialOnly" : 0.48690209580957544,
     "financialSentiment" : 0.24292449359781773,
     "scopedSearch" : true,
     "profile" : {
@@ -557,7 +572,8 @@
       "sources" : [ "https://fortune.com/2023/10/19/convoy-trucking-tech-startup-shuts-down-jeff-bezos-investor", "https://www.bloomberg.com/news/articles/2023-10-19/bezos-backed-startup-convoy-closes-operations-with-no-buyer" ],
       "keywords" : [ "Dan Lewis", "Grant Goodale", "digital freight" ]
     },
-    "rawHeadlines" : 3,
+    "rawHeadlines" : 2,
+    "threshold" : 0.4960750704679032,
     "headlines" : [ {
       "positiveTerms" : [ ],
       "score" : 0,
@@ -576,6 +592,7 @@
     "ambiguousName" : true
   }, {
     "asOf" : "2011-01-01",
+    "model" : "random forest, 100 trees",
     "maturity" : {
       "establishedAfter" : 10.0,
       "source" : "design rule: 5 and 10 years after the first round",
@@ -598,8 +615,8 @@
       "sentimentVolatility" : 0.7071067811865476,
       "newsVolumeTrend" : 2.0
     },
-    "checkedAt" : "2026-10-28T16:17:03.294488Z",
-    "financialOnly" : 0.47753722009943916,
+    "checkedAt" : "2026-10-29T08:55:48.907148Z",
+    "financialOnly" : 0.4645323989372973,
     "financialSentiment" : 0.17986650888891179,
     "scopedSearch" : false,
     "profile" : {
@@ -614,7 +631,8 @@
       "sources" : [ "https://en.wikipedia.org/wiki/Airbnb" ],
       "keywords" : [ ]
     },
-    "rawHeadlines" : 3,
+    "rawHeadlines" : 6,
+    "threshold" : 0.4960750704679032,
     "headlines" : [ {
       "positiveTerms" : [ "raises" ],
       "score" : 1,
@@ -633,6 +651,7 @@
     "ambiguousName" : false
   }, {
     "asOf" : "2012-07-01",
+    "model" : "random forest, 100 trees",
     "maturity" : {
       "establishedAfter" : 10.0,
       "source" : "design rule: 5 and 10 years after the first round",
@@ -640,7 +659,7 @@
       "olderAfter" : 5.0,
       "level" : "young"
     },
-    "correct" : true,
+    "correct" : false,
     "sentiment" : {
       "permalink" : "/demo",
       "newsCount" : 3,
@@ -655,8 +674,8 @@
       "sentimentVolatility" : 0.5773502691896258,
       "newsVolumeTrend" : 1.0
     },
-    "checkedAt" : "2026-10-28T16:17:04.864671Z",
-    "financialOnly" : 0.5015381889397125,
+    "checkedAt" : "2026-10-29T08:55:50.840589Z",
+    "financialOnly" : 0.4886305874162805,
     "financialSentiment" : 0.46975172606770527,
     "scopedSearch" : true,
     "profile" : {
@@ -670,7 +689,8 @@
       "sources" : [ "https://vator.tv/2016-12-29-when-stripe-was-young-the-early-years/", "https://www.startupgrind.com/blog/the-collison-brothers-and-story-behind-the-founding-of-stripe" ],
       "keywords" : [ "Patrick Collison", "John Collison", "payments" ]
     },
-    "rawHeadlines" : 26,
+    "rawHeadlines" : 25,
+    "threshold" : 0.4960750704679032,
     "headlines" : [ {
       "positiveTerms" : [ "invests" ],
       "score" : 1,
@@ -696,6 +716,7 @@
     "ambiguousName" : true
   }, {
     "asOf" : "2015-07-01",
+    "model" : "random forest, 100 trees",
     "maturity" : {
       "establishedAfter" : 10.0,
       "source" : "design rule: 5 and 10 years after the first round",
@@ -718,8 +739,8 @@
       "sentimentVolatility" : 0.0,
       "newsVolumeTrend" : 2.0
     },
-    "checkedAt" : "2026-10-28T16:17:06.420537Z",
-    "financialOnly" : 0.5628592132831154,
+    "checkedAt" : "2026-10-29T08:55:53.051742Z",
+    "financialOnly" : 0.5747575858807074,
     "financialSentiment" : 0.40167875795300906,
     "scopedSearch" : false,
     "profile" : {
@@ -735,6 +756,7 @@
       "keywords" : [ ]
     },
     "rawHeadlines" : 33,
+    "threshold" : 0.4960750704679032,
     "headlines" : [ {
       "positiveTerms" : [ ],
       "score" : 0,
@@ -949,6 +971,7 @@
     "ambiguousName" : false
   }, {
     "asOf" : "2013-10-01",
+    "model" : "random forest, 100 trees",
     "maturity" : {
       "establishedAfter" : 10.0,
       "source" : "design rule: 5 and 10 years after the first round",
@@ -971,8 +994,8 @@
       "sentimentVolatility" : 0.39477101697586126,
       "newsVolumeTrend" : 8.0
     },
-    "checkedAt" : "2026-10-28T16:17:08.014868Z",
-    "financialOnly" : 0.6519376142319036,
+    "checkedAt" : "2026-10-29T08:55:55.160947Z",
+    "financialOnly" : 0.5434525026620595,
     "financialSentiment" : 0.6683898549281077,
     "scopedSearch" : false,
     "profile" : {
@@ -988,6 +1011,7 @@
       "keywords" : [ ]
     },
     "rawHeadlines" : 32,
+    "threshold" : 0.4960750704679032,
     "headlines" : [ {
       "positiveTerms" : [ ],
       "score" : 0,

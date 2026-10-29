@@ -128,4 +128,14 @@ class TextPipelineSpec extends AnyFunSuite {
     assert(NameMatcher.confirmCommonWord("Ramp", "Ramps closed on Route 9").confidence < NameMatcher.AcceptanceThreshold)
     assert(NameMatcher.confirmCommonWord("Kabbage", "Kabbage expands lending").confidence == 1.0)
   }
+
+  test("GDELT GKG rows: date, source, url and the page title from the extras column") {
+    import com.startupsurvival.web.Gdelt
+    val cols = Array.fill(27)("")
+    cols(1) = "20261028120000"; cols(3) = "pr-inside.com"; cols(4) = "https://example.com/a"
+    cols(26) = "<PAGE_LINKS>x</PAGE_LINKS><PAGE_TITLE>Duolingo &amp; friends raise funding</PAGE_TITLE>"
+    assert(Gdelt.parseLine(cols.mkString("\t")).contains(Gdelt.Article("2026-10-28", "Duolingo & friends raise funding", "pr-inside.com", "https://example.com/a")))
+    assert(Gdelt.parseLine("too\tfew").isEmpty)
+    assert(Gdelt.slot(java.time.Instant.parse("2026-10-28T12:44:59Z")) == java.time.Instant.parse("2026-10-28T12:30:00Z"))
+  }
 }

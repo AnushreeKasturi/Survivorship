@@ -25,3 +25,9 @@ export const closedCount = cv[0].n_closed;
 export const signed = (x, digits = 3) => (x >= 0 ? "+" : "−") + Math.abs(x).toFixed(digits);
 export const pct = (x) => `${(x * 100).toFixed(1)}%`;
 export const shortModel = { "Logistic Regression": "LR", "Linear SVM": "SVM" };
+export const benchmark = json("results", "benchmark.json");
+export const structural = (() => {
+  const live = benchmark.candidates.find((c) => c.name === "rf-100");
+  const base = benchmark.candidates.find((c) => c.name === benchmark.baseline);
+  return { live, base };
+})();
