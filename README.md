@@ -37,9 +37,10 @@ Reported per experiment: Accuracy, Precision, Recall, F1, and a confusion
 matrix (TP/TN/FP/FN). **All results come from actual execution — nothing in
 this repository may contain fabricated numbers.**
 
-That single-split design (Phase 18) was then replaced as the headline
-evaluation by **stratified 5-fold cross-validation with paired bootstrap
-intervals** (Phase 18b), after a leak was found in one financial feature.
+>The single-split design was then replaced as the headline
+>evaluation by **stratified 5-fold cross-validation with paired bootstrap
+>intervals**, after a leak was found in one financial feature.
+>(This is one of the data leak issues in the earlier experiments we had to fix)
 
 ## Findings
 
